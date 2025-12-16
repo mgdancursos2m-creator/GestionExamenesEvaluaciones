@@ -1,198 +1,107 @@
-﻿{% extends "base.html" %}
-
-{% block title %}Gestión de Cursos - Sistema de Exámenes{% endblock %}
+{% extends "base.html" %}
 
 {% block content %}
 <div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Gestión de Cursos</h2>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAgregarCurso">
-            <i class="fas fa-plus"></i> Agregar Curso
-        </button>
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Gestión de Cursos</h1>
+        <div>
+            <a href="{{ url_for('admin.agenda') }}" class="btn btn-info">
+                <i class="fas fa-calendar-alt"></i> Agenda de Eventos
+            </a>
+            <button class="btn btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#modalAgregarCurso">
+                <i class="fas fa-plus"></i> Agregar Curso
+            </button>
+        </div>
     </div>
 
-    <!-- Botón para agenda -->
-    <div class="mb-3">
-        <a href="{{ url_for('agenda_eventos') }}" class="btn btn-outline-info">
-            <i class="fas fa-calendar"></i> Ver Agenda del Mes
-        </a>
-    </div>
+    <!-- Tabla de cursos -->
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Nombre del Curso</th>
+                            <th class="text-center">Eventos</th>
+                            <th class="text-center">Evaluación</th>
+                            <th class="text-center">Cuestionarios</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for curso in cursos %}
+                        <tr>
+                            <td>
+                                <strong>{{ curso.nombre }}</strong>
+                                {% if curso.descripcion %}
+                                <br><small class="text-muted">{{ curso.descripcion }}</small>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-primary rounded-pill fs-6">
+                                    {{ curso.total_eventos }}
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                {% if curso.tiene_evaluacion %}
+                                    <a href="{{ url_for('admin.ver_evaluacion_curso', curso_id=curso.id) }}" 
+                                       class="btn btn-info btn-sm">
+                                        <i class="fas fa-clipboard-check"></i> Ver
+                                    </a>
+                                {% else %}
+                                    <span class="badge bg-secondary">No configurada</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if curso.tiene_cuestionario %}
+                                    <a href="{{ url_for('admin.ver_cuestionario_curso', curso_id=curso.id) }}" 
+                                       class="btn btn-warning btn-sm">
+                                        <i class="fas fa-question-circle"></i> Ver
+                                    </a>
+                                {% else %}
+                                    <span class="badge bg-secondary">No configurado</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <!-- BOTÓN CORREGIDO: Usar curso.id consistentemente -->
+                                    <button type="button" class="btn btn-success" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#modalAgregarEvento{{ curso.id }}"
+                                            title="Agregar evento">
+                                        <i class="fas fa-calendar-plus"></i>
+                                    </button>
 
-    <div class="row">
-        {% for curso in cursos %}
-        <div class="col-md-6 col-lg-4 mb-4">
-            <div class="card h-100">
-                <div class="card-header bg-primary text-white">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h5 class="card-title mb-0">{{ curso.nombre }}</h5>
-                        </div>
-                        <!-- Botón de EVENTOS (no alumnos) -->
-                        <a href="#" class="btn btn-light btn-sm">
-                            <i class="fas fa-calendar"></i> {{ curso.total_eventos }} Eventos
-                        </a>
-                    </div>
-                </div>
-                
-                <div class="card-body">
-                    <p class="card-text">{{ curso.description or 'Sin descripción' }}</p>
-                    
-                    <!-- Información de Eventos -->
-                    <div class="mb-3">
-                        <h6>Eventos del Curso:</h6>
-                        {% set eventos_curso = eventos_dict.get(curso._id|string, []) %}
-                        {% if eventos_curso %}
-                            {% for evento in eventos_curso %}
-                            <div class="border rounded p-2 mb-2">
-                                <small>
-                                    <strong>Fecha:</strong> {{ evento.fecha_evento.strftime('%d/%m/%Y') }}<br>
-                                    <strong>Instructor:</strong> {{ evento.instructor_nombre or 'Por asignar' }}<br>
-                                    <strong>Alumnos:</strong> {{ evento.alumnos_asignados|length }}
-                                </small>
-                            </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="alert alert-warning py-2">
-                                <small>No hay eventos programados</small>
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <!-- Información de Exámenes -->
-                    <div class="row text-center mb-3">
-                        <div class="col-6">
-                            <div class="border rounded p-2">
-                                <h6 class="text-primary">Cuestionarios</h6>
-                                <h4 class="mb-1">{{ curso.cuestionarios_count }}</h4>
-                                <small class="text-muted">Generados</small>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="border rounded p-2">
-                                <h6 class="text-info">Evaluaciones</h6>
-                                <h4 class="mb-1">{{ curso.evaluaciones_count }}</h4>
-                                <small class="text-muted">Generadas</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card-footer">
-                    <div class="btn-group w-100" role="group">
-                        <!-- Botón para gestionar eventos -->
-                        <button class="btn btn-outline-success btn-sm" 
-                                data-bs-toggle="modal" 
-                                data-bs-target="#modalGestionEvento{{ curso._id }}">
-                            <i class="fas fa-calendar-plus"></i> Eventos
-                        </button>
+                                    <button type="button" class="btn btn-primary"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalCargarCuestionario{{ curso.id }}"
+                                            title="Cargar CSV">
+                                        <i class="fas fa-upload"></i>
+                                    </button>
                         
-                        <!-- Botón para cargar cuestionario -->
-                        <button class="btn btn-outline-primary btn-sm"
-                                data-bs-toggle="modal"
-                                data-bs-target="#modalCargarCuestionario{{ curso._id }}">
-                            <i class="fas fa-upload"></i> CSV
-                        </button>
-                    </div>
-                    
-                    <!-- Botones para ver exámenes -->
-                    <div class="btn-group w-100 mt-2" role="group">
-                        <!-- Botón para ver evaluación -->
-                        {% if curso.evaluacion_id %}
-                        <a href="{{ url_for('detalle_examen', examen_id=curso.evaluacion_id|string) }}" 
-                           class="btn btn-outline-info btn-sm">
-                            <i class="fas fa-chart-bar"></i> Ver Evaluación
-                        </a>
-                        {% else %}
-                        <button class="btn btn-outline-secondary btn-sm" disabled>
-                            <i class="fas fa-chart-bar"></i> Sin Evaluación
-                        </button>
-                        {% endif %}
-                        
-                        <!-- Botón para ver cuestionario -->
-                        {% if curso.cuestionario_id is not none %}
-                        <a href="{{ url_for('detalle_examen', examen_id=curso.cuestionario_id|string) }}" 
-                           class="btn btn-outline-warning btn-sm">
-                            <i class="fas fa-list"></i> Ver Cuestionario
-                        </a>
-                        {% elif curso.cuestionarios_count > 0 %}
-                        <!-- Si hay cuestionarios pero no hay cuestionario_id -->
-                        <button class="btn btn-outline-warning btn-sm" 
-                                onclick="asignarCuestionarioAutomaticamente('{{ curso._id }}')"
-                                title="Hay cuestionarios pero no están asignados correctamente. Click para corregir.">
-                            <i class="fas fa-exclamation-triangle"></i> Corregir Cuestionario
-                        </button>
-                        {% else %}
-                        <button class="btn btn-outline-secondary btn-sm" disabled>
-                            <i class="fas fa-list"></i> Sin Cuestionario
-                        </button>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal para gestionar eventos -->
-        <div class="modal fade" id="modalGestionEvento{{ curso._id }}" tabindex="-1">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Gestionar Eventos - {{ curso.nombre }}</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <!-- Formulario para crear evento -->
-                        <form action="{{ url_for('crear_evento_curso', curso_id=curso._id) }}" method="POST">
-                            <div class="mb-3">
-                                <label for="fecha_evento{{ curso._id }}" class="form-label">Fecha del Evento</label>
-                                <input type="date" class="form-control" id="fecha_evento{{ curso._id }}" 
-                                       name="fecha_evento" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="instructor_email{{ curso._id }}" class="form-label">Instructor (Opcional)</label>
-                                <select class="form-select" id="instructor_email{{ curso._id }}" name="instructor_email">
-                                    <option value="">Seleccionar instructor...</option>
-                                    {% for instructor in instructores %}
-                                    <option value="{{ instructor.email }}">{{ instructor.nombre }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="text-end">
-                                <button type="submit" class="btn btn-primary">Crear Evento</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal para cargar cuestionario CSV -->
-        <div class="modal fade" id="modalCargarCuestionario{{ curso._id }}" tabindex="-1">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Cargar Cuestionario CSV - {{ curso.nombre }}</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form action="{{ url_for('cargar_cuestionario_curso_csv', curso_id=curso._id) }}" 
-                              method="POST" enctype="multipart/form-data">
-                            <div class="mb-3">
-                                <label for="archivo_csv{{ curso._id }}" class="form-label">Archivo CSV</label>
-                                <input type="file" class="form-control" id="archivo_csv{{ curso._id }}" 
-                                       name="archivo_csv" accept=".csv" required>
-                                <div class="form-text">
-                                    Formato CSV: número_pregunta,pregunta,tipo_respuesta,opciones,respuesta_correcta
+                                    <form action="{{ url_for('admin.eliminar_curso', curso_id=curso.id) }}" method="POST" style="display: inline;">
+                                        <input type="hidden" name="curso_id" value="{{ curso.id }}">
+                                        <button type="submit" class="btn btn-danger" 
+                                                onclick="return confirm('¿Está seguro de eliminar {{ curso.nombre }}?')"
+                                                title="Eliminar">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
                                 </div>
-                            </div>
-                            <div class="text-end">
-                                <button type="submit" class="btn btn-primary">Cargar Cuestionario</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                <i class="fas fa-inbox fa-2x mb-2"></i><br>
+                                No hay cursos registrados
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
-        {% endfor %}
     </div>
 </div>
 
@@ -204,58 +113,138 @@
                 <h5 class="modal-title">Agregar Nuevo Curso</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                <form action="{{ url_for('agregar_curso') }}" method="POST">
+            <form action="{{ url_for('admin.agregar_curso') }}" method="POST">
+                <div class="modal-body">
                     <div class="mb-3">
-                        <label for="nombre" class="form-label">Nombre del Curso</label>
-                        <input type="text" class="form-control" id="nombre" name="nombre" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="description" class="form-label">Descripción</label>
-                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        <label class="form-label">Nombre del Curso</label>
+                        <input type="text" class="form-control" name="nombre" required>
                     </div>
                     <div class="mb-3">
-                        <label for="horas_totales" class="form-label">Horas Totales</label>
-                        <input type="number" class="form-control" id="horas_totales" name="horas_totales" required>
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-control" name="descripcion" rows="3"></textarea>
                     </div>
                     <div class="mb-3">
-                        <label for="dias_duracion" class="form-label">Días de Duración</label>
-                        <input type="number" class="form-control" id="dias_duracion" name="dias_duracion" required>
+                        <label class="form-label">Horas Totales</label>
+                        <input type="number" class="form-control" name="horas_totales" required min="1">
                     </div>
-                    <div class="text-end">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Agregar Curso</button>
+                    <div class="mb-3">
+                        <label class="form-label">Días de Duración</label>
+                        <input type="number" class="form-control" name="dias_duracion" required min="1">
                     </div>
-                </form>
-            </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Agregar Curso</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+
+<!-- Modales para eventos y cuestionarios -->
+{% for curso in cursos %}
+<!-- Modal para evento - CORREGIDO: usar curso.id consistentemente -->
+<div class="modal fade" id="modalAgregarEvento{{ curso.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Agregar Evento - {{ curso.nombre }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('admin.crear_evento_curso', curso_id=curso.id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Fecha del evento</label>
+                        <input type="date" class="form-control" name="fecha_evento" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Instructor (Opcional)</label>
+                        <select class="form-select" name="instructor_email">
+                            <option value="">Seleccionar instructor...</option>
+                            {% for instructor in instructores %}
+                            <option value="{{ instructor.email }}">{{ instructor.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Crear Evento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para cuestionario CSV - CORREGIDO: usar curso.id consistentemente -->
+<div class="modal fade" id="modalCargarCuestionario{{ curso.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cargar Cuestionario - {{ curso.nombre }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('admin.cargar_cuestionario_curso', curso_id=curso.id) }}" 
+                  method="POST" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Archivo CSV</label>
+                        <input type="file" class="form-control" name="archivo_csv" accept=".csv" required>
+                        <div class="form-text">
+                            Formato: número;pregunta;tipo;opciones;respuesta_correcta
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Cargar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
 {% endblock %}
 
 {% block scripts %}
 <script>
-function asignarCuestionarioAutomaticamente(cursoId) {
-    if (confirm('¿Deseas asignar automáticamente el cuestionario a este curso?')) {
-        fetch(`/admin/curso/${cursoId}/asignar_cuestionario_auto`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Cuestionario asignado correctamente. Recargando página...');
-                location.reload();
-            } else {
-                alert('Error: ' + data.message);
-            }
-        })
-        .catch(error => {
-            alert('Error: ' + error);
-        });
+// Función para eliminar curso (si decides mantener el método GET)
+function eliminarCurso(cursoId) {
+    if (confirm('¿Estás seguro de que quieres eliminar este curso?')) {
+        window.location.href = '/admin/curso/eliminar/' + cursoId;
     }
 }
+
+// Verificación de carga mejorada
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('✅ Página cargada correctamente');
+    console.log('✅ Bootstrap cargado:', typeof bootstrap !== 'undefined');
+    
+    // Debug de modales - versión mejorada
+    document.querySelectorAll('[data-bs-toggle="modal"]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const target = this.getAttribute('data-bs-target');
+            console.log('📍 Modal activado:', target);
+            
+            // Verificar si el modal existe
+            const modalElement = document.querySelector(target);
+            if (modalElement) {
+                console.log('✅ Modal encontrado:', target);
+            } else {
+                console.error('❌ Modal NO encontrado:', target);
+                console.log('🔍 Buscando modales disponibles:');
+                document.querySelectorAll('.modal').forEach(modal => {
+                    console.log('   -', modal.id);
+                });
+            }
+        });
+    });
+
+    // Verificar datos de cursos en consola
+    console.log('📊 Cursos cargados:', {{ cursos|length }});
+    {% for curso in cursos %}
+    console.log('   - Curso: {{ curso.nombre }}, ID: {{ curso.id }}');
+    {% endfor %}
+});
 </script>
 {% endblock %}

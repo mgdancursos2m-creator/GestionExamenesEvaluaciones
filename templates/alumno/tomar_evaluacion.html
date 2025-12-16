@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluación - Sistema de Exámenes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .evaluation-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .evaluation-header {
+            background: #4a6fa5;
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 40px;
+        }
+        .section-header {
+            background: #6c757d;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 30px 0 20px 0;
+        }
+        .question-container {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 25px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .scale-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .scale-option {
+            flex: 1;
+            min-width: 120px;
+        }
+        .scale-option input[type="radio"] {
+            display: none;
+        }
+        .scale-option label {
+            display: block;
+            padding: 15px;
+            text-align: center;
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .scale-option input[type="radio"]:checked + label {
+            background: #4a6fa5;
+            color: white;
+            border-color: #4a6fa5;
+        }
+        .scale-option label:hover {
+            background: #e9ecef;
+        }
+        .scale-number {
+            font-size: 24px;
+            font-weight: bold;
+            display: block;
+        }
+        .scale-label {
+            font-size: 12px;
+            display: block;
+            margin-top: 5px;
+        }
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            resize: vertical;
+            min-height: 150px;
+        }
+        .btn-submit {
+            background: #28a745;
+            color: white;
+            padding: 15px 40px;
+            font-size: 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 30px;
+        }
+        .btn-cancel {
+            background: #dc3545;
+            color: white;
+            padding: 15px 40px;
+            font-size: 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 30px;
+            margin-right: 20px;
+        }
+        .controls {
+            text-align: center;
+            margin-top: 50px;
+        }
+        .instructions-box {
+            background: #e3f2fd;
+            border-left: 5px solid #2196f3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="evaluation-container">
+            <div class="evaluation-header">
+                <h1>{{ evaluacion.nombre }}</h1>
+                <p><strong>Curso:</strong> {{ curso_nombre }}</p>
+                <p>{{ evaluacion.descripcion }}</p>
+            </div>
+
+            <div class="instructions-box">
+                <h3>📋 Instrucciones:</h3>
+                <p>{{ evaluacion.instrucciones }}</p>
+            </div>
+
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="alert alert-warning">
+                        {% for message in messages %}
+                            <p>{{ message }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <form id="evaluationForm" method="POST" action="{{ url_for('alumno.procesar_evaluacion', evento_id=evento_id, curso_id=curso_id) }}">
+                <input type="hidden" name="evaluacion_id" value="{{ evaluacion._id }}">
+                
+                {% set current_section = '' %}
+                {% for pregunta in preguntas %}
+                    {% if pregunta.seccion != current_section %}
+                        {% set current_section = pregunta.seccion %}
+                        <div class="section-header">
+                            {% if pregunta.seccion == 'taller' %}
+                                <h3>📊 Evaluación del Taller</h3>
+                            {% elif pregunta.seccion == 'instructor' %}
+                                <h3>👨‍🏫 Evaluación del Instructor</h3>
+                            {% elif pregunta.seccion == 'comentarios' %}
+                                <h3>💬 Comentarios Adicionales</h3>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="question-container">
+                        <h3>{{ pregunta.pregunta }}</h3>
+                        
+                        {% if pregunta.tipo == 'escala' %}
+                        <div class="scale-options">
+                            {% for opcion in pregunta.opciones %}
+                            <div class="scale-option">
+                                <input type="radio" 
+                                       id="p{{ pregunta.numero }}_{{ opcion }}" 
+                                       name="pregunta_{{ pregunta.numero }}" 
+                                       value="{{ opcion }}"
+                                       required>
+                                <label for="p{{ pregunta.numero }}_{{ opcion }}">
+                                    <span class="scale-number">{{ opcion }}</span>
+                                    <span class="scale-label">
+                                        {% if opcion == "1" %}Muy mal
+                                        {% elif opcion == "2" %}Mal
+                                        {% elif opcion == "3" %}Regular
+                                        {% elif opcion == "4" %}Bien
+                                        {% elif opcion == "5" %}Muy Bien
+                                        {% elif opcion == "6" %}Excelente
+                                        {% endif %}
+                                    </span>
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        {% elif pregunta.tipo == 'texto_largo' %}
+                        <div style="margin-top: 20px;">
+                            <textarea name="comentario" 
+                                      placeholder="Escribe tus comentarios sobre el taller aquí..."></textarea>
+                        </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                
+                <div class="controls">
+                    <button type="button" class="btn-cancel" onclick="confirmCancel()">
+                        Cancelar Evaluación
+                    </button>
+                    <button type="submit" class="btn-submit" id="submitBtn">
+                        Enviar Evaluación
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function confirmCancel() {
+            if (confirm('¿Estás seguro de que quieres cancelar? Se perderán todas las respuestas.')) {
+                window.location.href = "{{ url_for('alumno.user_dashboard') }}";
+            }
+        }
+        
+        document.getElementById('evaluationForm').addEventListener('submit', function(e) {
+            const boton = document.getElementById('submitBtn');
+            boton.disabled = true;
+            boton.textContent = 'Enviando...';
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Exámenes - Sistema de Exámenes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .exams-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .exam-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-left: 5px solid #4a6fa5;
+        }
+        .exam-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .exam-score {
+            font-size: 36px;
+            font-weight: bold;
+            color: #4a6fa5;
+        }
+        .exam-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .detail-item {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .no-exams {
+            text-align: center;
+            padding: 50px;
+            color: #6c757d;
+        }
+        .no-exams-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 Mis Exámenes</h1>
+            <p>Historial de todos los exámenes completados</p>
+        </header>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="alert alert-info">
+                    {% for message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="exams-container">
+            {% if examenes %}
+                {% for examen in examenes %}
+                <div class="exam-card">
+                    <div class="exam-header">
+                        <div>
+                            <h2>{{ examen.curso_nombre }}</h2>
+                            <p style="color: #6c757d; margin-top: 5px;">
+                                📅 Completado: {{ examen.fecha_cuestionario.strftime('%d/%m/%Y %H:%M') }}
+                            </p>
+                        </div>
+                        <div class="exam-score">
+                            {{ "%.1f"|format(examen.calificacion) }}%
+                        </div>
+                    </div>
+                    
+                    <div class="exam-details">
+                        <div class="detail-item">
+                            <strong>📊 Resultado:</strong><br>
+                            {{ examen.respuestas_correctas }} / {{ examen.total_preguntas }} correctas
+                        </div>
+                        
+                        <div class="detail-item">
+                            <strong>📅 Fecha del evento:</strong><br>
+                            {{ examen.fecha_evento.strftime('%d/%m/%Y') }}
+                        </div>
+                        
+                        <div class="detail-item">
+                            <strong>✅ Estatus:</strong><br>
+                            <span style="color: #28a745; font-weight: bold;">
+                                {{ examen.estatus|title }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px; text-align: right;">
+                        <a href="{{ url_for('alumno.ver_cuestionario', evento_id=examen.evento_id) }}" 
+                           class="btn btn-primary">
+                           📄 Ver detalles completos
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-exams">
+                    <div class="no-exams-icon">📭</div>
+                    <h3>No hay exámenes completados</h3>
+                    <p>Aún no has completado ningún examen. Regresa al dashboard para comenzar.</p>
+                    <a href="{{ url_for('alumno.user_dashboard') }}" class="btn" style="margin-top: 20px;">
+                        Volver al Dashboard
+                    </a>
+                </div>
+            {% endif %}
+            <div style="margin-top: 20px; text-align: center;">
+                <a href="{{ url_for('alumno.user_dashboard') }}" style="text-decoration: none;">
+                    <button style="padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                        ← Volver al Tablero
+                    </button>
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

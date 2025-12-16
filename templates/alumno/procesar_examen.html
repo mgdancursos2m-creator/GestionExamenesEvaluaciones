@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Examen Enviado - Sistema de Exámenes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .result-container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9fa;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .success-icon {
+            font-size: 80px;
+            color: #28a745;
+            margin-bottom: 20px;
+        }
+        .score {
+            font-size: 48px;
+            font-weight: bold;
+            color: #007bff;
+            margin: 20px 0;
+        }
+        .btn-dashboard {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 15px 30px;
+            background: #4a6fa5;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="result-container">
+            <div class="success-icon">✓</div>
+            <h1>¡Examen Enviado Correctamente!</h1>
+            <p>Tu examen ha sido recibido y está siendo calificado.</p>
+            
+            {% if resultado %}
+            <div class="score">
+                Calificación: {{ resultado.calificacion }}%
+            </div>
+            <p><strong>Respuestas correctas:</strong> {{ resultado.correctas }} de {{ resultado.total }}</p>
+            {% else %}
+            <p>Los resultados estarán disponibles pronto.</p>
+            {% endif %}
+            
+            <div style="margin-top: 40px;">
+                <a href="{{ url_for('alumno.user_dashboard') }}" class="btn-dashboard">
+                    Volver al Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

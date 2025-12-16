@@ -1,51 +1,186 @@
 ﻿{% extends "base.html" %}
 
-{% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>👥 Gestión de Alumnos</h2>
-    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAgregarAlumno">
-        ➕ Agregar Alumno
-    </button>
-</div>
+{% block title %}Gestión de Alumnos - Administrador{% endblock %}
 
-<div class="card">
-    <div class="card-body">
-        {% if alumnos %}
-        <div class="table-responsive">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Email</th>
-                        <th>Nombre</th>
-                        <th>Curso</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for alumno in alumnos %}
-                    <tr>
-                        <td>{{ alumno.email }}</td>
-                        <td>{{ alumno.nombre }}</td>
-                        <td>{{ alumno.curso }}</td>
-                        <td>
-                            <button class="btn btn-sm btn-warning">✏️ Editar</button>
-                            <a href="{{ url_for('eliminar_alumno', email=alumno.email) }}" 
-                               class="btn btn-sm btn-danger"
-                               onclick="return confirm('¿Está seguro de eliminar este alumno?')">
-                                🗑️ Eliminar
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-users"></i> Gestión de Alumnos</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAgregarAlumno">
+            <i class="fas fa-plus"></i> Agregar Alumno
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            {% if alumnos %}
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Teléfono</th>
+                            <th>Curso</th>
+                            <th>Fecha Registro</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for alumno in alumnos %}
+                        <tr>
+                            <td>{{ alumno.nombre }}</td>
+                            <td>{{ alumno.email }}</td>
+                            <td>{{ alumno.telefono or 'No especificado' }}</td>
+                            <td>{{ alumno.curso or 'No asignado' }}</td>
+                            <td>
+                                {% if alumno.fecha_registro %}
+                                    {{ alumno.fecha_registro.strftime('%d/%m/%Y %H:%M') }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-warning" 
+                                            onclick="editarAlumno('{{ alumno.email }}')"
+                                            title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <!-- CORREGIDO: Añadido 'admin.' -->
+                                    <a href="{{ url_for('admin.eliminar_alumno', email=alumno.email) }}"
+                                       class="btn btn-danger"
+                                       onclick="return confirm('¿Está seguro de eliminar este alumno?')"
+                                       title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info text-center">
+                <i class="fas fa-users fa-2x mb-3"></i>
+                <h5>No hay alumnos registrados</h5>
+                <p class="mb-0">Comienza agregando tu primer alumno.</p>
+            </div>
+            {% endif %}
         </div>
-        {% else %}
-        <div class="text-center py-4">
-            <p class="text-muted">No hay alumnos registrados</p>
-            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-primary">Volver al Dashboard</a>
-        </div>
-        {% endif %}
     </div>
 </div>
+
+<!-- Modal para agregar alumno -->
+<div class="modal fade" id="modalAgregarAlumno" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Agregar Nuevo Alumno</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('admin.agregar_alumno') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label">Nombre *</label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email *</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="telefono" class="form-label">Teléfono</label>
+                        <input type="text" class="form-control" id="telefono" name="telefono">
+                    </div>
+                    <div class="mb-3">
+                        <label for="curso" class="form-label">Curso</label>
+                        <select class="form-select" id="curso" name="curso">
+                            <option value="">Seleccionar curso</option>
+                            {% for curso in cursos %}
+                            <option value="{{ curso.nombre }}">{{ curso.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para editar alumno -->
+<div class="modal fade" id="modalEditarAlumno" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title">Editar Alumno</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formEditarAlumno" method="POST" action="#">
+                <div class="modal-body">
+                    <input type="hidden" id="edit_email_original" name="email_original">
+                    <div class="mb-3">
+                        <label for="edit_nombre" class="form-label">Nombre *</label>
+                        <input type="text" class="form-control" id="edit_nombre" name="nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_email" class="form-label">Email *</label>
+                        <input type="email" class="form-control" id="edit_email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_telefono" class="form-label">Teléfono</label>
+                        <input type="text" class="form-control" id="edit_telefono" name="telefono">
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_curso" class="form-label">Curso</label>
+                        <select class="form-select" id="edit_curso" name="curso">
+                            <option value="">Seleccionar curso</option>
+                            {% for curso in cursos %}
+                            <option value="{{ curso.nombre }}">{{ curso.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning">Actualizar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function editarAlumno(email) {
+    // Buscar datos del alumno (simulado - deberías hacer una petición AJAX)
+    console.log('Editando alumno:', email);
+    
+    // Aquí deberías hacer una petición AJAX para obtener los datos del alumno
+    // fetch('/admin/buscar_alumno?email=' + encodeURIComponent(email))
+    // .then(response => response.json())
+    // .then(data => {
+    //     if (data.exists) {
+    //         document.getElementById('edit_email_original').value = email;
+    //         document.getElementById('edit_nombre').value = data.alumno.nombre;
+    //         document.getElementById('edit_email').value = data.alumno.email;
+    //         document.getElementById('edit_telefono').value = data.alumno.telefono || '';
+    //         document.getElementById('edit_curso').value = data.alumno.curso || '';
+    //         
+    //         const modal = new bootstrap.Modal(document.getElementById('modalEditarAlumno'));
+    //         modal.show();
+    //     }
+    // });
+    
+    // Por ahora, solo mostramos un mensaje
+    alert('Funcionalidad de edición para: ' + email + '\n\n(Pendiente de implementar)');
+}
+</script>
 {% endblock %}

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalles de Evaluación - Sistema de Exámenes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .evaluation-detail-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .evaluation-summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .average-score {
+            font-size: 72px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .responses-container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .response-section {
+            margin: 30px 0;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .response-item {
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 5px solid #ddd;
+            border-radius: 5px;
+            background: #f8f9fa;
+        }
+        .scale-response {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4a6fa5;
+            margin-right: 10px;
+        }
+        .comment-box {
+            background: #f0f8ff;
+            border-left: 5px solid #2196f3;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="evaluation-detail-container">
+            <div class="evaluation-summary">
+                <h1>{{ evaluacion.nombre }}</h1>
+                <h2>Curso: {{ evaluacion.curso_nombre }}</h2>
+                <div class="average-score">{{ "%.1f"|format(evaluacion.puntuacion_promedio) }}/6</div>
+                <p>Evaluación completada: {{ evaluacion.fecha_realizacion.strftime('%d/%m/%Y %H:%M') }}</p>
+            </div>
+
+            <div class="responses-container">
+                <h2>📋 Detalles de las Respuestas</h2>
+                
+                <!-- Sección Taller -->
+                <div class="response-section">
+                    <h3 style="color: #4a6fa5;">📊 Evaluación del Taller</h3>
+                    {% for respuesta in evaluacion.respuestas %}
+                        {% if respuesta.seccion == 'taller' %}
+                        <div class="response-item">
+                            <h4>{{ respuesta.pregunta }}</h4>
+                            <p>
+                                <span class="scale-response">{{ respuesta.respuesta }}</span>
+                                <span>{{ respuesta.escala_texto }}</span>
+                            </p>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                
+                <!-- Sección Instructor -->
+                <div class="response-section">
+                    <h3 style="color: #4a6fa5;">👨‍🏫 Evaluación del Instructor</h3>
+                    {% for respuesta in evaluacion.respuestas %}
+                        {% if respuesta.seccion == 'instructor' %}
+                        <div class="response-item">
+                            <h4>{{ respuesta.pregunta }}</h4>
+                            <p>
+                                <span class="scale-response">{{ respuesta.respuesta }}</span>
+                                <span>{{ respuesta.escala_texto }}</span>
+                            </p>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                
+                <!-- Comentarios -->
+                {% if evaluacion.comentarios %}
+                <div class="comment-box">
+                    <h3 style="color: #2196f3;">💬 Comentarios Adicionales</h3>
+                    <p>{{ evaluacion.comentarios }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <div style="text-align: center; margin-top: 40px;">
+                <a href="{{ url_for('alumno.user_evaluaciones') }}" class="btn" style="margin-right: 15px;">
+                    ← Volver a Mis Evaluaciones
+                </a>
+                <a href="{{ url_for('alumno.user_dashboard') }}" class="btn btn-outline">
+                    Ir al Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

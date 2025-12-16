@@ -1,90 +1,102 @@
 {% extends "base.html" %}
 
-{% block title %}Resultados de Evaluación - {{ evaluacion.examen_nombre }}{% endblock %}
+{% block title %}Detalle de Evaluación - Sistema de Exámenes{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="card">
-        <div class="card-header bg-info text-white">
-            <h2 class="mb-0">Resultados de Evaluación</h2>
-        </div>
-        <div class="card-body">
-            <!-- Información general -->
-            <div class="card mb-4">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">Información del Taller</h5>
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Detalle de la Evaluación</h2>
+        <a href="{{ url_for('alumno.user_evaluaciones') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver a Mis Evaluaciones
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Información General</h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <strong>Nombre del Taller:</strong> {{ evaluacion.curso_nombre }}
+                            <p><strong>Evaluación:</strong> {{ evaluacion.nombre }}</p>
+                            <p><strong>Curso:</strong> {{ evaluacion.curso_nombre }}</p>
                         </div>
                         <div class="col-md-6">
-                            <strong>Nombre del Instructor:</strong> {{ evaluacion.instructor_nombre }}
-                        </div>
-                    </div>
-                    <div class="row mt-2">
-                        <div class="col-md-6">
-                            <strong>Fecha de realización:</strong> {{ evaluacion.fecha_realizacion.strftime('%d/%m/%Y %H:%M') }}
-                        </div>
-                        <div class="col-md-6">
-                            <strong>Promedio general:</strong> 
-                            <span class="badge bg-success">{{ evaluacion.promedio_general }}/6</span>
+                            <p><strong>Puntuación Promedio:</strong>
+                                <span class="badge bg-{{ 'success' if evaluacion.puntuacion_promedio >= 4.5 else 'warning' if evaluacion.puntuacion_promedio >= 3 else 'danger' }}">
+                                    {{ "%.1f"|format(evaluacion.puntuacion_promedio) }}/6
+                                </span>
+                            </p>
+                            <p><strong>Fecha:</strong> {{ evaluacion.fecha_realizacion.strftime('%d/%m/%Y %H:%M') }}</p>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Resultados del Taller -->
-            <h4 class="text-primary border-bottom pb-2">Taller</h4>
-            {% if evaluacion.resultados.respuestas_taller %}
-                {% for numero, respuesta in evaluacion.resultados.respuestas_taller.items() %}
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <h6 class="card-title">{{ numero }}.- {{ respuesta.pregunta }}</h6>
-                        <div class="mt-2">
-                            <strong>Calificación:</strong> 
-                            <span class="badge bg-primary">{{ respuesta.puntaje }}/6</span>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div class="alert alert-warning">No hay respuestas para la sección de taller.</div>
-            {% endif %}
-
-            <!-- Resultados del Instructor -->
-            <h4 class="text-primary border-bottom pb-2 mt-4">Instructor</h4>
-            {% if evaluacion.resultados.respuestas_instructor %}
-                {% for numero, respuesta in evaluacion.resultados.respuestas_instructor.items() %}
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <h6 class="card-title">{{ numero }}.- {{ respuesta.pregunta }}</h6>
-                        <div class="mt-2">
-                            <strong>Calificación:</strong> 
-                            <span class="badge bg-primary">{{ respuesta.puntaje }}/6</span>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div class="alert alert-warning">No hay respuestas para la sección de instructor.</div>
-            {% endif %}
-
-            <!-- Comentarios -->
-            {% if evaluacion.resultados.comentarios %}
-            <div class="card mt-4">
-                <div class="card-body">
-                    <h6 class="card-title">Comentarios Adicionales</h6>
-                    <p class="card-text">{{ evaluacion.resultados.comentarios }}</p>
-                </div>
-            </div>
-            {% endif %}
-
-            <div class="mt-4 text-center">
-                <a href="{{ url_for('user_dashboard') }}" class="btn btn-secondary">Volver al Dashboard</a>
             </div>
         </div>
     </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Respuestas</h5>
+                </div>
+                <div class="card-body">
+                    {% if evaluacion.respuestas %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Pregunta</th>
+                                    <th>Tu Respuesta</th>
+                                    <th>Calificación</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for respuesta in evaluacion.respuestas %}
+                                <tr>
+                                    <td>{{ respuesta.pregunta }}</td>
+                                    <td>{{ respuesta.respuesta }}</td>
+                                    <td>
+                                        {% if respuesta.escala_texto %}
+                                        <span class="badge bg-info">{{ respuesta.escala_texto }}</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Texto</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-info-circle"></i>
+                        No hay detalles de respuestas disponibles para esta evaluación.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if evaluacion.comentarios %}
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0">Tus Comentarios</h5>
+                </div>
+                <div class="card-body">
+                    <div class="border rounded p-3 bg-light">
+                        {{ evaluacion.comentarios }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

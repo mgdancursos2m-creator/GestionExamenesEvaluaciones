@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultados del Examen - Sistema de Exámenes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .result-container {
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .score-header {
+            text-align: center;
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            margin-bottom: 40px;
+        }
+        .score-number {
+            font-size: 72px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .score-details {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .question-result {
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 5px solid #ddd;
+            border-radius: 5px;
+        }
+        .correct {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .incorrect {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        .btn-dashboard {
+            display: block;
+            width: 200px;
+            margin: 40px auto 20px;
+            padding: 15px;
+            background: #4a6fa5;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 18px;
+        }
+        .status-icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="result-container">
+            <div class="score-header">
+                <h1>📊 Resultados del Examen</h1>
+                <h2>{{ curso_nombre }}</h2>
+                <div class="score-number">{{ "%.1f"|format(calificacion) }}%</div>
+                <h3>{{ respuestas_correctas }} de {{ total_preguntas }} respuestas correctas</h3>
+            </div>
+
+            <div class="score-details">
+                <h3>Resumen del Resultado</h3>
+                <p><strong>Calificación:</strong> {{ "%.1f"|format(calificacion) }}%</p>
+                <p><strong>Respuestas correctas:</strong> {{ respuestas_correctas }}</p>
+                <p><strong>Respuestas incorrectas:</strong> {{ total_preguntas - respuestas_correctas }}</p>
+                <p><strong>Total de preguntas:</strong> {{ total_preguntas }}</p>
+            </div>
+
+            <h3>📋 Detalle de Preguntas</h3>
+            
+            {% for resultado in resultados %}
+            <div class="question-result {{ 'correct' if resultado.es_correcta else 'incorrect' }}">
+                <h4>Pregunta {{ loop.index }}</h4>
+                <p><strong>{{ resultado.pregunta }}</strong></p>
+                
+                <div style="margin: 10px 0;">
+                    <span style="font-weight: bold; color: #6c757d;">Tu respuesta:</span>
+                    <span style="margin-left: 10px;">
+                        {% if resultado.es_correcta %}
+                            ✅ {{ resultado.respuesta_usuario }}
+                        {% else %}
+                            ❌ {{ resultado.respuesta_usuario }}
+                        {% endif %}
+                    </span>
+                </div>
+                
+                {% if not resultado.es_correcta %}
+                <div style="margin: 10px 0;">
+                    <span style="font-weight: bold; color: #28a745;">Respuesta correcta:</span>
+                    <span style="margin-left: 10px;">{{ resultado.respuesta_correcta }}</span>
+                </div>
+                {% endif %}
+                
+                <div style="margin-top: 15px;">
+                    <strong>Estado:</strong>
+                    {% if resultado.es_correcta %}
+                        <span style="color: #28a745; font-weight: bold;">✓ Correcta</span>
+                    {% else %}
+                        <span style="color: #dc3545; font-weight: bold;">✗ Incorrecta</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+
+            <a href="{{ url_for('alumno.user_dashboard') }}" class="btn-dashboard">
+                Volver al Dashboard
+            </a>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="{{ url_for('alumno.user_examenes') }}" style="color: #4a6fa5;">
+                    📁 Ver todos mis exámenes
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

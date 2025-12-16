@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tomar Examen - Sistema de Exámenes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .question-container {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .options {
+            margin-left: 20px;
+        }
+        .option {
+            margin: 10px 0;
+        }
+        .timer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #ff6b6b;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .exam-header {
+            background: #4a6fa5;
+            color: white;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+        }
+        .btn-submit {
+            background: #28a745;
+            color: white;
+            padding: 15px 30px;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s;
+        }
+        .btn-submit:hover {
+            background: #218838;
+        }
+        .btn-cancel {
+            background: #dc3545;
+            color: white;
+            padding: 15px 30px;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            margin-right: 15px;
+            transition: all 0.3s;
+        }
+        .btn-cancel:hover {
+            background: #c82333;
+        }
+        .question-number {
+            color: #4a6fa5;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .exam-controls {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 1px solid #dee2e6;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        .cancel-warning {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .cancel-modal {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+        }
+        .cancel-modal h3 {
+            color: #dc3545;
+            margin-bottom: 20px;
+        }
+        .cancel-modal p {
+            margin-bottom: 25px;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        .modal-buttons button {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn-modal-cancel {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-modal-confirm {
+            background: #28a745;
+            color: white;
+        }
+        .btn-modal-close {
+            background: #6c757d;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Temporizador -->
+        <div class="timer" id="timer">Tiempo: 60:00</div>
+        
+        <!-- Encabezado del examen -->
+        <div class="exam-header">
+            <h1>{{ examen.titulo }}</h1>
+            <p><strong>Curso:</strong> {{ curso_nombre }}</p>
+            <p><strong>Instrucciones:</strong> Responde todas las preguntas seleccionando la opción correcta.</p>
+            <p><strong>Tiempo límite:</strong> {{ examen.tiempo_limite }} minutos</p>
+            <a href="{{ url_for('alumno.user_dashboard') }}" 
+               class="btn-secondary" 
+               onclick="return confirmCancel(event)">
+               ← Volver sin guardar
+            </a>
+        </div>
+
+        <!-- Mensajes flash -->
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="alert alert-warning">
+                    {% for message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Formulario del examen -->
+        <form id="examForm" method="POST" 
+              action="{{ url_for('alumno.procesar_examen', evento_id=evento_id, curso_id=curso_id) }}">
+            <input type="hidden" name="examen_id" value="{{ examen._id }}">
+            
+            <!-- Preguntas -->
+            {% for pregunta in preguntas %}
+            <div class="question-container">
+                <div class="question-number">Pregunta {{ loop.index }}</div>
+                <h3>{{ pregunta.enunciado }}</h3>
+                
+                <div class="options">
+                    {% for opcion in pregunta.opciones %}
+                    <div class="option">
+                        <input type="radio" 
+                               id="pregunta_{{ pregunta._id }}_{{ loop.index }}" 
+                               name="pregunta_{{ pregunta._id }}" 
+                               value="{{ opcion.valor }}"
+                               required>
+                        <label for="pregunta_{{ pregunta._id }}_{{ loop.index }}">
+                            {{ opcion.texto }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+            
+            <!-- Controles del examen -->
+            <div class="exam-controls">
+                <button type="button" class="btn-cancel" id="cancelBtn">
+                    Cancelar Examen
+                </button>
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    Finalizar Examen
+                </button>
+                
+                <div style="margin-top: 20px; font-size: 14px; color: #6c757d;">
+                    <p><strong>Nota:</strong> Una vez que envíes el examen no podrás modificarlo.</p>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Modal de confirmación para cancelar -->
+    <div class="cancel-warning" id="cancelWarning">
+        <div class="cancel-modal">
+            <h3>⚠️ ¿Cancelar Examen?</h3>
+            <p>
+                Estás a punto de cancelar el examen. <strong>Todas las respuestas que hayas contestado se perderán</strong> 
+                y no se guardará ningún progreso.
+            </p>
+            <p>¿Estás seguro de que deseas continuar?</p>
+            
+            <div class="modal-buttons">
+                <button type="button" class="btn-modal-close" id="closeModal">
+                    Continuar Examen
+                </button>
+                <button type="button" class="btn-modal-cancel" id="confirmCancel">
+                    Sí, Cancelar Examen
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Temporizador
+        let tiempoTotal = {{ examen.tiempo_limite * 60 }}; // Convertir a segundos
+        const timerElement = document.getElementById('timer');
+        let timerInterval;
+        
+        function actualizarTemporizador() {
+            const minutos = Math.floor(tiempoTotal / 60);
+            const segundos = tiempoTotal % 60;
+            
+            timerElement.textContent = `Tiempo: ${minutos}:${segundos < 10 ? '0' : ''}${segundos}`;
+            
+            if (tiempoTotal <= 0) {
+                clearInterval(timerInterval);
+                alert('¡Tiempo agotado! El examen se enviará automáticamente.');
+                document.getElementById('examForm').submit();
+            } else {
+                tiempoTotal--;
+            }
+        }
+        
+        // Iniciar temporizador cuando la página cargue
+        window.onload = function() {
+            timerInterval = setInterval(actualizarTemporizador, 1000);
+        };
+        
+        // Modal de cancelación
+        const cancelBtn = document.getElementById('cancelBtn');
+        const cancelWarning = document.getElementById('cancelWarning');
+        const closeModal = document.getElementById('closeModal');
+        const confirmCancel = document.getElementById('confirmCancel');
+        
+        // Mostrar modal al hacer clic en cancelar
+        cancelBtn.addEventListener('click', function() {
+            cancelWarning.style.display = 'flex';
+        });
+        
+        // Cerrar modal
+        closeModal.addEventListener('click', function() {
+            cancelWarning.style.display = 'none';
+        });
+        
+        // Confirmar cancelación
+        confirmCancel.addEventListener('click', function() {
+            // Redirigir al dashboard sin guardar
+            window.location.href = "{{ url_for('alumno.user_dashboard') }}";
+        });
+        
+        // Cerrar modal al hacer clic fuera de él
+        cancelWarning.addEventListener('click', function(e) {
+            if (e.target === cancelWarning) {
+                cancelWarning.style.display = 'none';
+            }
+        });
+        
+        // Confirmación para el enlace "Volver sin guardar"
+        function confirmCancel(event) {
+            event.preventDefault();
+            cancelWarning.style.display = 'flex';
+            return false;
+        }
+        
+        // Prevenir envío accidental del formulario
+        document.getElementById('examForm').addEventListener('submit', function(e) {
+            // Verificar que todas las preguntas estén respondidas
+            const radioButtons = document.querySelectorAll('input[type="radio"]');
+            const preguntas = new Set();
+            radioButtons.forEach(radio => {
+                if (radio.checked) {
+                    preguntas.add(radio.name);
+                }
+            });
+            
+            if (preguntas.size !== {{ preguntas|length }}) {
+                e.preventDefault();
+                
+                // Preguntar si quiere enviar igualmente
+                if (confirm('No has respondido todas las preguntas. ¿Deseas enviar el examen de todas formas?')) {
+                    // Continuar con el envío
+                    const boton = document.getElementById('submitBtn');
+                    boton.disabled = true;
+                    boton.textContent = 'Enviando...';
+                    return true;
+                }
+                return false;
+            }
+            
+            // Deshabilitar botón para evitar envíos múltiples
+            const boton = document.getElementById('submitBtn');
+            boton.disabled = true;
+            boton.textContent = 'Enviando...';
+        });
+        
+        // Detectar intento de salir de la página
+        window.addEventListener('beforeunload', function(e) {
+            // Solo mostrar advertencia si hay respuestas contestadas
+            const radioButtons = document.querySelectorAll('input[type="radio"]:checked');
+            if (radioButtons.length > 0) {
+                e.preventDefault();
+                e.returnValue = '¿Estás seguro de que quieres salir? Se perderán las respuestas que hayas contestado.';
+            }
+        });
+        
+        // Desactivar teclas de atajo que podrían causar problemas
+        document.addEventListener('keydown', function(e) {
+            // Prevenir F5 (refresh)
+            if (e.key === 'F5') {
+                e.preventDefault();
+                if (confirm('¿Recargar la página? Se perderán las respuestas no guardadas.')) {
+                    location.reload();
+                }
+            }
+            
+            // Prevenir Ctrl+R
+            if (e.ctrlKey && e.key === 'r') {
+                e.preventDefault();
+                if (confirm('¿Recargar la página? Se perderán las respuestas no guardadas.')) {
+                    location.reload();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,556 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Eventos - Administrador{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="fas fa-calendar-alt"></i> Gestión de Eventos
+        </h2>
+        <a href="{{ url_for('admin.agenda') }}" class="btn btn-outline-primary">
+            <i class="fas fa-calendar-week"></i> Ver Agenda
+        </a>
+    </div>
+
+    <!-- Lista de Eventos -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Todos los Eventos de Capacitación</h5>
+                    <span class="badge bg-light text-dark">{{ eventos|length }} eventos</span>
+                </div>
+
+                <div class="card-body border-bottom">
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <form method="GET" class="row g-3 align-items-center" id="filtroForm">
+                                <div class="col-md-3">
+                                    <label for="filter_type" class="form-label">Filtrar por:</label>
+                                    <select name="filter_type" id="filter_type" class="form-select" onchange="actualizarPlaceholder()">
+                                        <option value="">Seleccionar columna</option>
+                                        <option value="curso" {% if filter_type == 'curso' %}selected{% endif %}>Curso</option>
+                                        <option value="fecha" {% if filter_type == 'fecha' %}selected{% endif %}>Fecha</option>
+                                        <option value="estatus" {% if filter_type == 'estatus' %}selected{% endif %}>Estatus</option>
+                                        <option value="instructor" {% if filter_type == 'instructor' %}selected{% endif %}>Instructor</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-5">
+                                    <label for="filter_value" class="form-label">Valor a buscar:</label>
+                                        <input type="text" 
+                                           class="form-control" 
+                                           id="filter_value" 
+                                           name="filter_value" 
+                                           value="{{ filter_value }}"
+                                           placeholder="Ingrese el valor para filtrar...">
+                                </div>
+                                <div class="col-md-4 d-flex align-items-end">
+                                    <div class="btn-group" role="group">
+                                        <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-filter"></i> Aplicar Filtro
+                                        </button>
+                                        {% if filter_type or filter_value %}
+                                            <a href="{{ url_for('admin.gestion_eventos') }}" class="btn btn-secondary">
+                                            <i class="fas fa-times"></i> Limpiar Filtro
+                                            </a>
+                                        {% endif %}
+                                        <a href="{{ url_for('admin.gestion_eventos', sort='fecha', order='desc') }}" 
+                                           class="btn btn-warning">
+                                            <i class="fas fa-calendar-alt"></i> Orden Original
+                                        </a>
+                                     </div>
+                                 </div>
+                            </form>
+            
+                            {% if filter_type and filter_value %}
+                            <div class="alert alert-info mt-3">
+                                <i class="fas fa-info-circle"></i> 
+                                Mostrando eventos filtrados por <strong>{{ filter_type }}</strong> 
+                                con valor: <strong>{{ filter_value }}</strong>
+                                <span class="badge bg-primary ms-2">{{ eventos|length }} eventos</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="card-body">
+                    {% if eventos %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+ 
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>
+                                        <a href="{{ url_for('admin.gestion_eventos', 
+                                                           sort='curso', 
+                                                           order='asc' if (sort_by == 'curso' and order == 'desc') else 'desc',
+                                                           filter_type=filter_type,
+                                                           filter_value=filter_value) }}" 
+                                           class="text-white text-decoration-none">
+                                            Curso
+                                            {% if sort_by == 'curso' %}
+                                                {% if order == 'asc' %}
+                                                    <i class="fas fa-sort-up"></i>
+                                                {% else %}
+                                                    <i class="fas fa-sort-down"></i>
+                                                {% endif %}
+                                            {% else %}
+                                                <i class="fas fa-sort"></i>
+                                            {% endif %}
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="{{ url_for('admin.gestion_eventos', 
+                                                           sort='fecha', 
+                                                           order='asc' if (sort_by == 'fecha' and order == 'desc') else 'desc',
+                                                           filter_type=filter_type,
+                                                           filter_value=filter_value) }}" 
+                                           class="text-white text-decoration-none">
+                                            Fecha
+                                            {% if sort_by == 'fecha' %}
+                                                {% if order == 'asc' %}
+                                                    <i class="fas fa-sort-up"></i>
+                                                {% else %}
+                                                    <i class="fas fa-sort-down"></i>
+                                                {% endif %}
+                                            {% else %}
+                                                <i class="fas fa-sort"></i>
+                                            {% endif %}
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="{{ url_for('admin.gestion_eventos', 
+                                                           sort='estatus', 
+                                                           order='asc' if (sort_by == 'estatus' and order == 'desc') else 'desc',
+                                                           filter_type=filter_type,
+                                                           filter_value=filter_value) }}" 
+                                           class="text-white text-decoration-none">
+                                            Estatus
+                                            {% if sort_by == 'estatus' %}
+                                                {% if order == 'asc' %}
+                                                    <i class="fas fa-sort-up"></i>
+                                                {% else %}
+                                                    <i class="fas fa-sort-down"></i>
+                                                {% endif %}
+                                            {% else %}
+                                                <i class="fas fa-sort"></i>
+                                            {% endif %}
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="{{ url_for('admin.gestion_eventos', 
+                                                           sort='instructor', 
+                                                           order='asc' if (sort_by == 'instructor' and order == 'desc') else 'desc',
+                                                           filter_type=filter_type,
+                                                           filter_value=filter_value) }}" 
+                                           class="text-white text-decoration-none">
+                                            Instructor
+                                            {% if sort_by == 'instructor' %}
+                                                {% if order == 'asc' %}
+                                                    <i class="fas fa-sort-up"></i>
+                                                {% else %}
+                                                    <i class="fas fa-sort-down"></i>
+                                                {% endif %}
+                                            {% else %}
+                                                <i class="fas fa-sort"></i>
+                                            {% endif %}
+                                        </a>
+                                    </th>
+                                    <th>Alumnos</th>
+                                    <th>Cuestionarios</th>
+                                    <th>Evaluaciones</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {% for evento in eventos %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ evento.curso_nombre|default('Sin nombre') }}</strong>
+                                    </td>
+                                    <td>
+                                        {% if evento.fecha_evento %}
+                                            {{ evento.fecha_evento.strftime('%d/%m/%Y') }}
+                                        {% else %}
+                                            <span class="text-muted">No especificada</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if evento.estatus == 'abierto' %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-lock-open"></i> ABIERTO
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">
+                                                <i class="fas fa-lock"></i> CERRADO
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ evento.instructor_nombre|default('No asignado') }}
+                                        {% if evento.instructor_email %}
+                                            <br><small class="text-muted">{{ evento.instructor_email }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ evento.total_alumnos|default(0) }}</span>
+                                    </td>
+                                    <td>
+                                        {% set cuestionarios_contestados = evento.cuestionarios_contestados|default(0) %}
+                                        {% set total_alumnos = evento.total_alumnos|default(0) %}
+                                        <span class="badge bg-{{ 'success' if cuestionarios_contestados > 0 else 'secondary' }}">
+                                            {{ cuestionarios_contestados }}/{{ total_alumnos }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% set evaluaciones_contestadas = evento.evaluaciones_contestadas|default(0) %}
+                                        {% set total_alumnos = evento.total_alumnos|default(0) %}
+                                        <span class="badge bg-{{ 'warning' if evaluaciones_contestadas > 0 else 'secondary' }}">
+                                            {{ evaluaciones_contestadas }}/{{ total_alumnos }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <!-- Ver Alumnos - Siempre disponible -->
+                                            <a href="{{ url_for('eventos.alumnos_evento', evento_id=evento._id) }}" 
+                                               class="btn btn-outline-primary" title="Ver alumnos del evento">
+                                                <i class="fas fa-users"></i>
+                                            </a>
+                                            
+                                            {% if evento.estatus == 'abierto' %}
+                                                <!-- Editar - Solo si está abierto -->
+                                                <button class="btn btn-outline-warning" 
+                                                        onclick="editarEvento('{{ evento._id }}')"
+                                                        title="Editar evento">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                
+                                                <!-- Eliminar - Solo si está abierto -->
+                                                <button class="btn btn-outline-danger" 
+                                                        onclick="eliminarEvento('{{ evento._id }}', '{{ evento.curso_nombre }}')"
+                                                        title="Eliminar evento">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                                
+                                                <!-- Cerrar Evento - Solo si está abierto -->
+                                                <button class="btn btn-outline-secondary" 
+                                                        onclick="cerrarEvento('{{ evento._id }}', '{{ evento.curso_nombre }}')"
+                                                        title="Cerrar evento">
+                                                    <i class="fas fa-lock"></i>
+                                                </button>
+                                            {% else %}
+                                                <!-- Reabrir - Solo si está cerrado -->
+                                                <button class="btn btn-outline-success" 
+                                                        onclick="reabrirEvento('{{ evento._id }}', '{{ evento.curso_nombre }}')"
+                                                        title="Reabrir evento">
+                                                    <i class="fas fa-lock-open"></i>
+                                                </button>
+                                                
+                                                <!-- Visualizar Alumnos - Para eventos cerrados -->
+                                                <a href="{{ url_for('eventos.alumnos_evento', evento_id=evento._id) }}" 
+                                                   class="btn btn-outline-info" title="Ver alumnos del evento">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-calendar-times fa-3x mb-3"></i>
+                        <h5>No hay eventos registrados</h5>
+                        <p class="mb-0">Comienza creando tu primer evento desde la sección de Cursos.</p>
+                        <a href="{{ url_for('admin.gestion_cursos') }}" class="btn btn-primary mt-3">
+                            <i class="fas fa-arrow-right"></i> Ir a Cursos
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación para Eliminar -->
+<div class="modal fade" id="modalEliminarEvento" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea eliminar el evento: <strong id="nombreEventoEliminar"></strong>?</p>
+                <div class="alert alert-warning">
+                    <small>
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Advertencia:</strong> Esta acción no se puede deshacer y eliminará permanentemente el evento.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmarEliminar">Si, Eliminar Evento</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+
+// Variables globales para modales
+let eventoIdActual = null;
+
+// Función para editar evento
+function editarEvento(eventoId) {
+    // Redirigir a la página de edición (pendiente de implementar)
+    alert(`Funcionalidad de edición para evento ${eventoId} - Pendiente de implementar`);
+    // window.location.href = `/admin/evento/editar/${eventoId}`;
+}
+
+// Función para eliminar evento
+function eliminarEvento(eventoId, eventoNombre) {
+    eventoIdActual = eventoId;
+    document.getElementById('nombreEventoEliminar').textContent = eventoNombre;
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalEliminarEvento'));
+    modal.show();
+}
+
+// Función para cerrar evento
+function cerrarEvento(eventoId, eventoNombre) {
+    if (confirm(`¿Está seguro de que desea cerrar el evento "${eventoNombre}"?`)) {
+        fetch(`/eventos/evento/${eventoId}/cerrar`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Evento cerrado exitosamente');
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al cerrar el evento');
+        });
+    }
+}
+
+// Función para reabrir evento
+function reabrirEvento(eventoId, eventoNombre) {
+    if (confirm(`¿Está seguro de que desea reabrir el evento "${eventoNombre}"?`)) {
+        fetch(`/eventos/evento/${eventoId}/reabrir`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Evento reabierto exitosamente');
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al reabrir el evento');
+        });
+    }
+}
+
+// Configurar evento de confirmación para eliminar
+document.getElementById('btnConfirmarEliminar').addEventListener('click', function() {
+    if (eventoIdActual) {
+        fetch(`/eventos/evento/${eventoIdActual}/eliminar`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Evento eliminado exitosamente');
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al eliminar el evento');
+        });
+        
+        // Cerrar modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('modalEliminarEvento'));
+        modal.hide();
+    }
+});
+
+// Inicializar tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+
+
+// Actualizar placeholder según el tipo de filtro
+function actualizarPlaceholder() {
+    const filterType = document.getElementById('filter_type').value;
+    const filterValueInput = document.getElementById('filter_value');
+    
+    switch(filterType) {
+        case 'curso':
+            filterValueInput.placeholder = 'Ej: Lenguaje Estructurado de Consultas';
+            break;
+        case 'fecha':
+            filterValueInput.placeholder = 'Ej: 15/12/2025 o 12/2025';
+            break;
+        case 'estatus':
+            filterValueInput.placeholder = 'Ej: abierto o cerrado';
+            break;
+        case 'instructor':
+            filterValueInput.placeholder = 'Ej: Alberto Vazquez o avazquez';
+            break;
+        default:
+            filterValueInput.placeholder = 'Ingrese el valor para filtrar...';
+    }
+}
+
+// Inicializar placeholder al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    actualizarPlaceholder();
+    
+    // Agregar tooltips a los encabezados ordenables
+    const sortableHeaders = document.querySelectorAll('th a');
+    sortableHeaders.forEach(header => {
+        header.title = 'Click para ordenar (asc/desc)';
+    });
+});
+
+// Función para limpiar filtros y restaurar orden original
+function limpiarFiltros() {
+    window.location.href = "{{ url_for('admin.gestion_eventos') }}";
+}
+
+// Mostrar mensaje de ordenación actual
+function mostrarMensajeOrdenacion() {
+    const sortBy = "{{ sort_by }}";
+    const order = "{{ order }}";
+    
+    if (sortBy && sortBy !== 'fecha_evento') {
+        const mapNombres = {
+            'curso': 'Curso',
+            'fecha': 'Fecha',
+            'estatus': 'Estatus',
+            'instructor': 'Instructor'
+        };
+        
+        const nombreColumna = mapNombres[sortBy] || sortBy;
+        const direccion = order === 'asc' ? 'Ascendente' : 'Descendente';
+        
+        console.log(`Ordenando por: ${nombreColumna} (${direccion})`);
+    }
+}
+
+// Ejecutar al cargar
+mostrarMensajeOrdenacion();
+
+
+</script>
+
+<style>
+.table th {
+    background-color: #343a40;
+    color: white;
+    border: none;
+}
+
+.btn-group .btn {
+    margin-right: 2px;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+
+/* Estilos para estados */
+.bg-success {
+    background-color: #198754 !important;
+}
+
+.bg-secondary {
+    background-color: #6c757d !important;
+}
+
+.bg-info {
+    background-color: #0dcaf0 !important;
+}
+
+.bg-warning {
+    background-color: #ffc107 !important;
+    color: #000 !important;
+}
+
+/* Estilos para encabezados ordenables */
+th a {
+    color: white !important;
+    text-decoration: none;
+    display: inline-block;
+    padding-right: 20px;
+    position: relative;
+}
+
+th a:hover {
+    color: #ffd700 !important;
+    text-decoration: underline;
+}
+
+th a i {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* Estilos para botones de acción */
+.btn-group .btn {
+    margin-right: 5px;
+}
+
+/* Estilos para mensajes de filtro */
+.alert-info {
+    border-left: 4px solid #0dcaf0;
+}
+
+/* Estilos para filas de la tabla */
+.table tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .btn-group {
+        flex-direction: column;
+    }
+    
+    .btn-group .btn {
+        margin-bottom: 5px;
+        margin-right: 0;
+    }
+}
+
+</style>
+{% endblock %}

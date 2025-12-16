@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Evaluación - {{ curso.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Evaluación del Curso: {{ curso.nombre }}</h1>
+        <a href="{{ url_for('admin.gestion_cursos') }}" class="btn btn-primary btn-icon-split">
+            <span class="icon text-white-50">
+                <i class="fas fa-arrow-left"></i>
+            </span>
+            <span class="text">Volver a Cursos</span>
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-12">
+            <!-- Información de la Evaluación -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{{ evaluacion.nombre }}</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h5 class="text-info">Descripción</h5>
+                        <p>{{ evaluacion.descripcion }}</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5 class="text-info">Escala de Evaluación</h5>
+                        <div class="alert alert-info">
+                            <strong>{{ evaluacion.estructura.escala }}</strong>
+                        </div>
+                    </div>
+
+                    <!-- Sección del Taller -->
+                    <div class="mb-4">
+                        <h4 class="text-success">📋 Evaluación del Taller</h4>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead class="table-success">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Pregunta</th>
+                                        <th>Tipo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for pregunta in evaluacion.estructura.secciones.taller %}
+                                    <tr>
+                                        <td><strong>{{ pregunta.numero }}</strong></td>
+                                        <td>{{ pregunta.texto }}</td>
+                                        <td><span class="badge badge-primary">Escala 1-6</span></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Sección del Instructor -->
+                    <div class="mb-4">
+                        <h4 class="text-warning">👨‍🏫 Evaluación del Instructor</h4>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead class="table-warning">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Pregunta</th>
+                                        <th>Tipo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for pregunta in evaluacion.estructura.secciones.instructor %}
+                                    <tr>
+                                        <td><strong>{{ pregunta.numero }}</strong></td>
+                                        <td>{{ pregunta.texto }}</td>
+                                        <td><span class="badge badge-primary">Escala 1-6</span></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Comentarios -->
+                    <div class="mb-4">
+                        <h4 class="text-info">💬 Comentarios</h4>
+                        <div class="alert alert-secondary">
+                            <strong>{{ evaluacion.estructura.comentarios }}</strong>
+                        </div>
+                    </div>
+
+                    <!-- Información adicional -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card border-left-info shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                                Total de Preguntas
+                                            </div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                                {{ evaluacion.preguntas|length }}
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-question-circle fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card border-left-success shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                                Fecha de Creación
+                                            </div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                                {{ evaluacion.fecha_creacion.strftime('%d/%m/%Y') }}
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Cuestionario - {{ curso.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Cuestionario del Curso: {{ curso.nombre }}</h1>
+        <a href="{{ url_for('admin.gestion_cursos') }}" class="btn btn-primary btn-icon-split">
+            <span class="icon text-white-50">
+                <i class="fas fa-arrow-left"></i>
+            </span>
+            <span class="text">Volver a Cursos</span>
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-12">
+            <!-- Información del Cuestionario -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{{ cuestionario.nombre }}</h6>
+                </div>
+                <div class="card-body">
+                    <!-- Información general -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card border-left-primary shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                                Total de Preguntas
+                                            </div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                                {{ cuestionario.preguntas|length }}
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-question fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-left-success shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                                Tipo
+                                            </div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                                {{ cuestionario.tipo }}
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-tag fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-left-info shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                                Fecha de Creación
+                                            </div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                                {{ cuestionario.fecha_creacion.strftime('%d/%m/%Y') }}
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lista de Preguntas -->
+                    <h4 class="text-primary mb-3">📝 Preguntas del Cuestionario</h4>
+                    {% for pregunta in cuestionario.preguntas %}
+                    <div class="card mb-3 border-left-{% if pregunta.tipo == 'opcion_multiple' %}primary{% else %}warning{% endif %}">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <span class="badge badge-primary">Pregunta {{ pregunta.numero }}</span>
+                                {{ pregunta.pregunta }}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h6>Opciones:</h6>
+                                    <ul class="list-group">
+                                        {% for opcion in pregunta.opciones %}
+                                        <li class="list-group-item 
+                                            {% if opcion.startswith(pregunta.respuesta_correcta ~ ')') or opcion.startswith('\"' ~ pregunta.respuesta_correcta ~ ')') %} 
+                                                list-group-item-success font-weight-bold
+                                            {% endif %}">
+                                            {{ opcion }}
+                                            {% if opcion.startswith(pregunta.respuesta_correcta ~ ')') or opcion.startswith('\"' ~ pregunta.respuesta_correcta ~ ')') %}
+                                                <span class="badge badge-success ml-2">Correcta</span>
+                                            {% endif %}
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h6>Información:</h6>
+                                            <p><strong>Tipo:</strong> 
+                                                <span class="badge badge-info">{{ pregunta.tipo }}</span>
+                                            </p>
+                                            <p><strong>Respuesta Correcta:</strong> 
+                                                <span class="badge badge-success">{{ pregunta.respuesta_correcta }}</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

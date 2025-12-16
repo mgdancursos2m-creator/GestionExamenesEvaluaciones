@@ -1,90 +1,112 @@
 {% extends "base.html" %}
 
-{% block title %}Gestión de Instructores - Sistema de Exámenes{% endblock %}
+{% block title %}Gestión de Instructores - Administrador{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
-    <div class="row">
-        <div class="col-md-12">
-            <h2>Gestión de Instructores</h2>
-            
-            <!-- Botón para asignar instructor a evento -->
-            <div class="mb-4">
-                <a href="{{ url_for('asignar_instructor_evento') }}" class="btn btn-primary">
-                    <i class="fas fa-link"></i> Asignar Instructor a Evento
-                </a>
-            </div>
-        </div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Gestión de Instructores</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAgregarInstructor">
+            <i class="fas fa-plus"></i> Agregar Instructor
+        </button>
     </div>
 
-    <!-- Lista de Instructores -->
-    <div class="row mt-4">
-        <div class="col-md-12">
+    {% if instructores %}
+    <div class="row">
+        {% for instructor in instructores %}
+        <div class="col-md-6 mb-4">
             <div class="card">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">Lista de Instructores</h5>
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">{{ instructor.nombre }}</h5>
                 </div>
                 <div class="card-body">
-                    {% if instructores %}
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Nombre</th>
-                                    <th>Email</th>
-                                    <th>Especialidad</th>
-                                    <th>Eventos Asignados</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for instructor in instructores %}
-                                <tr>
-                                    <td>{{ instructor.nombre }}</td>
-                                    <td>{{ instructor.email }}</td>
-                                    <td>{{ instructor.especialidad }}</td>
-                                    <td>
-                                        {% if instructor.eventos_asignados %}
-                                            <div class="eventos-list">
-                                            {% for evento in instructor.eventos_asignados %}
-                                                <div class="evento-item mb-2 p-2 border rounded">
-                                                    <strong>Evento:</strong> {{ evento.nombre }}<br>
-                                                    <strong>Curso:</strong> {{ evento.curso_nombre }}<br>
-                                                    <strong>Estado:</strong> 
-                                                    <span class="badge bg-{{ 'success' if evento.estatus == 'abierto' else 'secondary' }}">
-                                                        {{ evento.estatus|upper }}
-                                                    </span>
-                                                    {% if evento.fecha %}
-                                                    <br><strong>Fecha:</strong> {{ evento.fecha }}
-                                                    {% endif %}
-                                                </div>
-                                            {% endfor %}
-                                            </div>
-                                        {% else %}
-                                            <span class="text-muted">No tiene eventos asignados</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                    <p><strong>Email:</strong> {{ instructor.email }}</p>
+                    <p><strong>Especialidad:</strong> {{ instructor.especialidad }}</p>
+                    
+                    <h6>Eventos Asignados:</h6>
+                    {% if instructor.eventos_asignados %}
+                        <ul class="list-group">
+                        {% for evento in instructor.eventos_asignados %}
+                            <li class="list-group-item">
+                                <strong>{{ evento.curso_nombre }}</strong><br>
+                                Fecha: {{ evento.fecha }}<br>
+                                Alumnos: {{ evento.alumnos_count }}<br>
+                                <a href="{{ url_for('eventos.alumnos_evento', evento_id=evento.id) }}" 
+                                   class="btn btn-sm btn-outline-primary mt-1">
+                                    Ver Alumnos
+                                </a>
+                            </li>
+                        {% endfor %}
+                        </ul>
                     {% else %}
-                    <div class="alert alert-info text-center">
-                        <i class="fas fa-info-circle"></i> No hay instructores registrados en el sistema.
-                    </div>
+                        <p class="text-muted">No tiene eventos asignados</p>
                     {% endif %}
                 </div>
+                <div class="card-footer">
+                    <button class="btn btn-warning btn-sm" onclick="editarInstructor('{{ instructor.email }}')">
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="eliminarInstructor('{{ instructor.email }}')">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                </div>
             </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center">
+        <i class="fas fa-info-circle fa-2x mb-3"></i>
+        <h5>No hay instructores registrados</h5>
+        <p class="mb-0">Comienza agregando el primer instructor al sistema.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal para agregar instructor -->
+<div class="modal fade" id="modalAgregarInstructor" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Agregar Instructor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('admin.agregar_instructor') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label">Nombre *</label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email *</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="especialidad" class="form-label">Especialidad</label>
+                        <input type="text" class="form-control" id="especialidad" name="especialidad">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Agregar Instructor</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+{% endblock %}
 
-<style>
-.eventos-list .evento-item {
-    background-color: #f8f9fa;
+{% block scripts %}
+<script>
+function editarInstructor(email) {
+    alert('Editar instructor: ' + email);
+    // Implementar lógica de edición
 }
-.eventos-list .evento-item:last-child {
-    margin-bottom: 0 !important;
+
+function eliminarInstructor(email) {
+    if (confirm('¿Está seguro de eliminar al instructor ' + email + '?')) {
+        window.location.href = '/admin/instructor/eliminar/' + encodeURIComponent(email);
+    }
 }
-</style>
+</script>
 {% endblock %}

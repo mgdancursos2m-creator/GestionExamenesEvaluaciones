@@ -1,51 +1,46 @@
 {% extends "base.html" %}
 
-{% block title %}Tomar Examen - {{ examen.nombre }}{% endblock %}
+{% block title %}Tomar Examen - {{ curso.nombre }}{% endblock %}
 
 {% block content %}
 <div class="container">
     <div class="row">
         <div class="col-md-12">
-            <h2>{{ examen.nombre }}</h2>
-            <p class="lead">{{ examen.descripcion }}</p>
+            <h2>Cuestionario: {{ curso.nombre }}</h2>
+            <p class="lead">Evento: {{ evento.fecha_evento.strftime('%d/%m/%Y') if evento.fecha_evento else 'Sin fecha' }}</p>
+            <hr>
             
-            <form method="post" action="{{ url_for('evaluar_examen', examen_id=examen._id) }}">
-                {% for pregunta in examen.preguntas %}
-                {% set pregunta_index = loop.index0 %}
-                <div class="card mb-4">
+            <form method="POST" action="{{ url_for('alumno.guardar_cuestionario', evento_id=evento._id) }}">
+                {% for pregunta in preguntas %}
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <strong>Pregunta {{ pregunta.numero }}:</strong> {{ pregunta.pregunta }}
+                    </div>
                     <div class="card-body">
-                        <h5 class="card-title">Pregunta {{ loop.index }}</h5>
-                        <p class="card-text">{{ pregunta.pregunta }}</p>
-                        
-                        <!-- Verificar si tiene opciones (pregunta de opción múltiple) -->
-                        {% if pregunta.opciones %}
-                            <div class="form-group">
-                                {% for opcion in pregunta.opciones %}
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" 
-                                           name="pregunta_{{ pregunta_index }}" 
-                                           id="opcion_{{ pregunta_index }}_{{ loop.index0 }}" 
-                                           value="{{ opcion }}" required>
-                                    <label class="form-check-label" for="opcion_{{ pregunta_index }}_{{ loop.index0 }}">
-                                        {{ opcion }}
-                                    </label>
-                                </div>
-                                {% endfor %}
+                        {% if pregunta.tipo == 'opcion_multiple' %}
+                            {% for opcion in pregunta.opciones %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" 
+                                       name="pregunta_{{ pregunta.numero }}" 
+                                       id="pregunta_{{ pregunta.numero }}_{{ loop.index }}" 
+                                       value="{{ opcion[0] }}" required>
+                                <label class="form-check-label" for="pregunta_{{ pregunta.numero }}_{{ loop.index }}">
+                                    {{ opcion }}
+                                </label>
                             </div>
-                        {% else %}
-                            <!-- Si no tiene opciones, mostrar campo de texto -->
-                            <div class="form-group">
-                                <textarea class="form-control" name="pregunta_{{ pregunta_index }}" 
-                                          rows="3" placeholder="Escribe tu respuesta aquí..." required></textarea>
-                            </div>
+                            {% endfor %}
                         {% endif %}
                     </div>
                 </div>
                 {% endfor %}
                 
-                <div class="d-grid gap-2">
-                    <button type="submit" class="btn btn-primary btn-lg">Enviar Examen</button>
-                    <a href="{{ url_for('user_examenes') }}" class="btn btn-secondary">Cancelar</a>
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-paper-plane"></i> Enviar Cuestionario
+                    </button>
+                    <a href="{{ url_for('alumno.user_dashboard') }}" class="btn btn-secondary">
+                        Cancelar
+                    </a>
                 </div>
             </form>
         </div>

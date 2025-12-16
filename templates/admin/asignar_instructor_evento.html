@@ -6,10 +6,31 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Asignar Instructor a Evento</h2>
-        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Volver al Dashboard
+        <a href="{{ url_for('gestion_instructores') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver a Instructores
         </a>
     </div>
+
+    <!-- Alertas informativas -->
+    {% if not instructores %}
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>No hay instructores registrados.</strong> 
+        <a href="{{ url_for('gestion_instructores') }}" class="alert-link">
+            Agregue instructores primero
+        </a>
+    </div>
+    {% endif %}
+
+    {% if not cursos %}
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>No hay cursos activos.</strong> 
+        <a href="{{ url_for('gestion_cursos') }}" class="alert-link">
+            Agregue cursos primero
+        </a>
+    </div>
+    {% endif %}
 
     <div class="row">
         <div class="col-md-8">
@@ -22,23 +43,35 @@
                         <!-- Selección de Instructor -->
                         <div class="mb-3">
                             <label for="instructor_email" class="form-label">Seleccionar Instructor</label>
-                            <select class="form-select" id="instructor_email" name="instructor_email" required>
+                            <select class="form-select" id="instructor_email" name="instructor_email" required 
+                                    {% if not instructores %}disabled{% endif %}>
                                 <option value="">Seleccionar instructor...</option>
                                 {% for instructor in instructores %}
-                                <option value="{{ instructor.email }}">{{ instructor.nombre }} ({{ instructor.email }})</option>
+                                <option value="{{ instructor.email }}">{{ instructor.nombre }} - {{ instructor.email }}</option>
                                 {% endfor %}
                             </select>
+                            {% if not instructores %}
+                            <div class="form-text text-warning">
+                                <i class="fas fa-info-circle"></i> No hay instructores disponibles
+                            </div>
+                            {% endif %}
                         </div>
 
                         <!-- Selección de Curso -->
                         <div class="mb-3">
                             <label for="curso_id" class="form-label">Seleccionar Curso</label>
-                            <select class="form-select" id="curso_id" name="curso_id" required>
+                            <select class="form-select" id="curso_id" name="curso_id" required 
+                                    {% if not cursos %}disabled{% endif %}>
                                 <option value="">Seleccionar curso...</option>
                                 {% for curso in cursos %}
                                 <option value="{{ curso._id }}">{{ curso.nombre }}</option>
                                 {% endfor %}
                             </select>
+                            {% if not cursos %}
+                            <div class="form-text text-warning">
+                                <i class="fas fa-info-circle"></i> No hay cursos disponibles
+                            </div>
+                            {% endif %}
                         </div>
 
                         <!-- Selección de Evento -->
@@ -48,7 +81,10 @@
                                 <option value="">Primero seleccione un curso</option>
                             </select>
                             <div class="form-text" id="eventoHelp">
-                                Solo se muestran eventos con estatus "ABIERTO"
+                                Solo se muestran eventos ABIERTOS sin instructor asignado
+                            </div>
+                            <div id="sinEventosMessage" class="form-text text-warning d-none">
+                                <i class="fas fa-info-circle"></i> No hay eventos disponibles para este curso
                             </div>
                         </div>
 
@@ -75,11 +111,16 @@
                         <li>Seleccione un evento ABIERTO del curso</li>
                         <li>Confirme la asignación</li>
                     </ol>
-                    
+
                     <div class="alert alert-warning mt-3">
                         <small>
-                            <i class="fas fa-info-circle"></i> 
-                            <strong>Nota:</strong> Los instructores se asignan a eventos específicos, no a cursos completos.
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Nota:</strong> Solo se muestran eventos que:
+                            <ul class="mt-1 mb-0">
+                                <li>Están con estatus "ABIERTO"</li>
+                                <li>No tienen instructor asignado</li>
+                                <li>Pertenecen al curso seleccionado</li>
+                            </ul>
                         </small>
                     </div>
                 </div>
@@ -95,7 +136,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const cursoSelect = document.getElementById('curso_id');
     const eventoSelect = document.getElementById('evento_id');
     const btnAsignar = document.getElementById('btnAsignar');
-    
+    const sinEventosMessage = document.getElementById('sinEventosMessage');
+
     // Pre-cargar eventos en variable JavaScript
     const eventosData = {
         {% for curso in cursos %}
@@ -103,39 +145,47 @@ document.addEventListener('DOMContentLoaded', function() {
             {% for evento in eventos_por_curso[curso._id|string] %}
             {
                 id: '{{ evento._id }}',
-                fecha: '{{ evento.fecha_evento.strftime("%d/%m/%Y") }}',
-                instructor: '{{ evento.instructor_nombre or "Sin asignar" }}'
+                nombre: '{{ evento.nombre|default("Evento sin nombre") }}',
+                fecha: '{{ evento.fecha_evento.strftime("%d/%m/%Y") if evento.fecha_evento else "Fecha no definida" }}',
+                curso: '{{ evento.curso_nombre|default("Curso sin nombre") }}'
             },
             {% endfor %}
         ],
         {% endfor %}
     };
-    
+
     // Cuando cambia el curso, cargar eventos
     cursoSelect.addEventListener('change', function() {
         const cursoId = this.value;
         eventoSelect.innerHTML = '<option value="">Seleccionar evento...</option>';
         eventoSelect.disabled = !cursoId;
         btnAsignar.disabled = true;
-        
+        sinEventosMessage.classList.add('d-none');
+
         if (cursoId && eventosData[cursoId]) {
-            eventosData[cursoId].forEach(evento => {
-                const option = document.createElement('option');
-                option.value = evento.id;
-                option.textContent = `${evento.fecha} - ${evento.instructor}`;
-                eventoSelect.appendChild(option);
-            });
+            if (eventosData[cursoId].length > 0) {
+                eventosData[cursoId].forEach(evento => {
+                    const option = document.createElement('option');
+                    option.value = evento.id;
+                    option.textContent = `${evento.fecha} - ${evento.nombre}`;
+                    eventoSelect.appendChild(option);
+                });
+            } else {
+                eventoSelect.innerHTML = '<option value="">No hay eventos disponibles</option>';
+                eventoSelect.disabled = true;
+                sinEventosMessage.classList.remove('d-none');
+            }
         }
     });
-    
+
     // Habilitar botón cuando todos los campos estén llenos
     function verificarFormulario() {
         const instructor = document.getElementById('instructor_email').value;
         const curso = cursoSelect.value;
         const evento = eventoSelect.value;
-        btnAsignar.disabled = !(instructor && curso && evento);
+        btnAsignar.disabled = !(instructor && curso && evento && evento !== "No hay eventos disponibles");
     }
-    
+
     document.getElementById('instructor_email').addEventListener('change', verificarFormulario);
     cursoSelect.addEventListener('change', verificarFormulario);
     eventoSelect.addEventListener('change', verificarFormulario);

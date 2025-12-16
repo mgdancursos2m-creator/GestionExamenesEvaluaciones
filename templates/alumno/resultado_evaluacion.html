@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluación Enviada - Sistema de Exámenes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .result-container {
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .score-header {
+            text-align: center;
+            padding: 40px;
+            background: linear-gradient(135deg, #4a6fa5 0%, #2c5282 100%);
+            color: white;
+            border-radius: 10px;
+            margin-bottom: 40px;
+        }
+        .score-number {
+            font-size: 72px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .response-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .response-item {
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #4a6fa5;
+            background: white;
+            border-radius: 5px;
+        }
+        .btn-dashboard {
+            display: block;
+            width: 200px;
+            margin: 40px auto;
+            padding: 15px;
+            background: #4a6fa5;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="result-container">
+            <div class="score-header">
+                <h1>✅ Evaluación Enviada</h1>
+                <h2>{{ curso_nombre }}</h2>
+                <div class="score-number">{{ "%.1f"|format(promedio) }}/6</div>
+                <h3>Puntuación promedio</h3>
+            </div>
+
+            <div class="response-section">
+                <h3>📊 Resumen de Respuestas</h3>
+                <p><strong>Puntuación total:</strong> {{ puntuacion_total }} puntos</p>
+                <p><strong>Preguntas respondidas:</strong> {{ preguntas_escala }}</p>
+                <p><strong>Promedio:</strong> {{ "%.1f"|format(promedio) }} de 6</p>
+            </div>
+
+            <h3>📋 Detalle de Respuestas</h3>
+            
+            {% for respuesta in respuestas %}
+            <div class="response-item">
+                <h4>{{ respuesta.pregunta }}</h4>
+                <p>
+                    <strong>Calificación:</strong> 
+                    <span style="font-size: 24px; font-weight: bold; color: #4a6fa5;">
+                        {{ respuesta.respuesta }}
+                    </span>
+                    <span style="margin-left: 10px;">({{ respuesta.escala_texto }})</span>
+                </p>
+                <p><strong>Sección:</strong> 
+                    {% if respuesta.seccion == 'taller' %}
+                        Evaluación del Taller
+                    {% elif respuesta.seccion == 'instructor' %}
+                        Evaluación del Instructor
+                    {% else %}
+                        {{ respuesta.seccion }}
+                    {% endif %}
+                </p>
+            </div>
+            {% endfor %}
+
+            {% if comentarios %}
+            <div class="response-item" style="background: #e3f2fd;">
+                <h4>💬 Comentarios Adicionales</h4>
+                <p>{{ comentarios }}</p>
+            </div>
+            {% endif %}
+
+            <a href="{{ url_for('alumno.user_dashboard') }}" class="btn-dashboard">
+                Volver al Dashboard
+            </a>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="{{ url_for('alumno.user_evaluaciones') }}" style="color: #4a6fa5;">
+                    📁 Ver todas mis evaluaciones
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

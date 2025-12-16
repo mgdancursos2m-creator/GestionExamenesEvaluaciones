@@ -1,0 +1,470 @@
+{% extends "base.html" %}
+
+{% block title %}Alumnos del Evento - Instructor{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <div class="card border-primary">
+                <div class="card-body py-2">
+                    <small class="text-primary">
+                        <i class="fas fa-user-tie"></i> <strong>Instructor:</strong> {{ session.nombre }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users"></i> Alumnos del Evento: {{ evento.curso_nombre }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Información del evento -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <p><strong>Curso:</strong> {{ evento.curso_nombre }}</p>
+                            <p><strong>Fecha:</strong> 
+                                {% if evento.fecha_evento %}
+                                {{ evento.fecha_evento.strftime('%d/%m/%Y') }}
+                                {% else %}
+                                No especificada
+                                {% endif %}
+                            </p>
+                            <p><strong>Instructor:</strong> {{ evento.instructor_nombre }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Total de alumnos:</strong> <span class="badge bg-info">{{ evento.total_alumnos }}</span></p>
+                            <p><strong>Cuestionarios completados:</strong> <span class="badge bg-success">{{ evento.cuestionarios_contestados }}</span></p>
+                            <p><strong>Evaluaciones completadas:</strong> <span class="badge bg-warning">{{ evento.evaluaciones_contestadas }}</span></p>
+                            {% if promedio_cuestionarios %}
+                            <p><strong>Promedio cuestionarios:</strong> <span class="badge bg-info">{{ "%.0f"|format(promedio_cuestionarios) }}%</span></p>
+                            {% endif %}
+                            {% if promedio_evaluaciones %}
+                            <p><strong>Promedio evaluaciones:</strong> <span class="badge bg-info">{{ "%.2f"|format(promedio_evaluaciones) }}/6</span></p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Gráficas de Calificaciones -->
+                    <div class="row mb-4">
+                        <!-- Gráfica 1: Calificaciones de Cuestionarios (Donut) -->
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="m-0 font-weight-bold">Calificaciones de Cuestionarios</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if evento.cuestionarios_contestados > 0 %}
+                                        <div class="grafica-container" style="cursor: pointer;" onclick="ampliarGrafica('cuestionarios', 'Calificaciones de Cuestionarios')">
+                                            <canvas id="graficaCuestionarios" width="400" height="200"></canvas>
+                                        </div>
+                                        <div class="mt-3 text-center">
+                                            <p><strong>Promedio: {{ "%.1f"|format(evento.promedio_cuestionarios) }}%</strong></p>
+                                            <small class="text-muted">
+                                                <span class="badge bg-danger">0-50%</span>
+                                                <span class="badge bg-warning">51-70%</span>
+                                                <span class="badge bg-info">71-85%</span>
+                                                <span class="badge bg-success">86-100%</span>
+                                            </small>
+                                        </div>
+                                        <button class="btn btn-sm btn-outline-primary mt-2" 
+                                                onclick="ampliarGrafica('cuestionarios', 
+                                                                        'Calificaciones de Cuestionarios', 
+                                                                        {{ evento.promedio_cuestionarios|default(0) }}, 
+                                                                        {{ evento.promedio_evaluaciones|default(0) }},
+                                                                        {{ evento.cuestionarios_contestados|default(0) }},
+                                                                        {{ evento.evaluaciones_contestadas|default(0) }})">
+                                            <i class="fas fa-expand"></i> Ampliar Gráfica
+                                        </button>
+                                    {% else %}
+                                        <div class="alert alert-info text-center py-4">
+                                            <i class="fas fa-chart-bar fa-2x mb-3"></i>
+                                            <h5>SIN DATOS</h5>
+                                            <p>No hay cuestionarios registrados</p>
+                                            <small class="text-muted">
+                                                Cuestionarios contestados: {{ evento.cuestionarios_contestados }}/{{ evento.total_alumnos }}
+                                            </small>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Gráfica 2: Promedios de Evaluaciones (Línea) -->
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="m-0 font-weight-bold">Promedios de Evaluaciones</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if evento.evaluaciones_contestadas > 0 %}
+                                        <div class="grafica-container" style="cursor: pointer;" onclick="ampliarGrafica('evaluaciones', 'Promedios de Evaluaciones')">
+                                            <canvas id="graficaEvaluaciones" width="400" height="200"></canvas>
+                                        </div>
+                                        <div class="mt-3 text-center">
+                                            <p><strong>Promedio: {{ "%.1f"|format(evento.promedio_evaluaciones) }}/6</strong></p>
+                                            <small class="text-muted">Escala de evaluación: 1-6 puntos</small>
+                                            <div class="mt-2">
+                                                <small class="text-muted">
+                                                    Evaluaciones registradas: {{ evento.evaluaciones_contestadas }}/{{ evento.total_alumnos }}
+                                                </small>
+                                            </div>
+                                        </div>
+                                        <button class="btn btn-sm btn-outline-primary mt-2" 
+                                                onclick="ampliarGrafica('evaluaciones', 
+                                                                        'Promedios de Evaluaciones', 
+                                                                        {{ evento.promedio_cuestionarios|default(0) }}, 
+                                                                        {{ evento.promedio_evaluaciones|default(0) }},
+                                                                        {{ evento.cuestionarios_contestados|default(0) }},
+                                                                        {{ evento.evaluaciones_contestadas|default(0) }})">
+                                                <i class="fas fa-expand"></i> Ampliar Gráfica
+                                        </button>
+                                    {% else %}
+                                        <div class="alert alert-info text-center py-4">
+                                            <i class="fas fa-star fa-2x mb-3"></i>
+                                            <h5>SIN DATOS</h5>
+                                           <p>No hay evaluaciones registradas</p>
+                                            <small class="text-muted">
+                                                Evaluaciones contestadas: {{ evento.evaluaciones_contestadas }}/{{ evento.total_alumnos }}
+                                            </small>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lista de alumnos -->
+                    {% if evento.alumnos_asignados %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Email</th>
+                                    <th>Teléfono</th>
+                                    <th>Cuestionario</th>
+                                    <th>Evaluación</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for alumno in evento.alumnos_asignados %}
+                                <tr>
+                                    <td><strong>{{ alumno.nombre }}</strong></td>
+                                    <td><code>{{ alumno.email }}</code></td>
+                                    <td>{{ alumno.telefono }}</td>
+                                    <td>
+                                        {% set found_question = false %}
+                                        {% if evento.cuestionarios_detalle %}
+                                            {% for c in evento.cuestionarios_detalle %}
+                                                {% if c.email == alumno.email %}
+                                                    {% set found_question = true %}
+                                                    <span class="badge bg-success" title="Calificación: {{ c.calificacion }}%">
+                                                        ✅ {{ c.calificacion }}%
+                                                    </span>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endif %}
+                                        {% if not found_question %}
+                                            <span class="badge bg-secondary">No contestado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% set found_eval = false %}
+                                        {% if evento.evaluaciones_detalle %}
+                                            {% for e in evento.evaluaciones_detalle %}
+                                                {% if e.email == alumno.email %}
+                                                    {% set found_eval = true %}
+                                                    <span class="badge bg-warning" title="Promedio: {{ e.puntuacion_promedio|round(2) }}/6">
+                                                        ✅ {{ e.puntuacion_promedio|round(2) }}/6
+                                                    </span>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endif %}
+                                        {% if not found_eval %}
+                                            <span class="badge bg-secondary">No evaluado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button type="button" class="btn btn-outline-info" onclick="verDetalleAlumno('{{ alumno.email }}')">
+                                                <i class="fas fa-eye"></i> Ver Detalles
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-info-circle"></i> No hay alumnos inscritos en este evento.
+                    </div>
+                    {% endif %}
+
+                    <!-- Botones de acción -->
+                    <div class="mt-4">
+                        <a href="{{ url_for('instructor.user_dashboard') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Volver al Tablero
+                        </a>
+                        {% if evento.estatus == 'abierto' %}
+                        <button class="btn btn-warning" onclick="cerrarEvento()">
+                            <i class="fas fa-lock"></i> Cerrar Evento
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para gráficas ampliadas -->
+<div class="modal fade" id="modalGraficaAmpliada" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="tituloGraficaAmpliada">Gráfica Ampliada</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div id="leyendaGraficaAmpliada" class="mb-3"></div>
+                <div style="position: relative; height: 70vh; width: 100%;">
+                    <canvas id="graficaAmpliadaCanvas"></canvas>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="descargarGrafica()">
+                    <i class="fas fa-download"></i> Descargar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Código JavaScript similar al de admin (versión simplificada)
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Cargando gráficas para instructor...');
+    inicializarGraficas();
+});
+
+// Variables globales
+let graficasInstancias = {
+    cuestionarios: null,
+    evaluaciones: null,
+    ampliada: null
+};
+
+let configGraficas = {
+    cuestionarios: null,
+    evaluaciones: null
+};
+
+function inicializarGraficas() {
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js no cargado');
+        return;
+    }
+    obtenerDatosGraficasReales();
+}
+
+function obtenerDatosGraficasReales() {
+    const url = '{{ url_for("instructor.instructor_estadisticas_graficas", evento_id=evento._id) }}';
+    
+    fetch(url)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.datos) {
+            crearGraficasConDatosReales(data.datos);
+        } else {
+            mostrarGraficasSinDatos();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        mostrarGraficasSinDatos();
+    });
+}
+
+function crearGraficasConDatosReales(datos) {
+    // Gráfica de cuestionarios
+    const ctx1 = document.getElementById('graficaCuestionarios');
+    if (ctx1 && datos.cuestionarios && datos.cuestionarios.datasets) {
+        configGraficas.cuestionarios = {
+            type: 'doughnut',
+            data: datos.cuestionarios,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        };
+        graficasInstancias.cuestionarios = new Chart(ctx1, configGraficas.cuestionarios);
+    }
+
+    // Gráfica de evaluaciones
+    const ctx2 = document.getElementById('graficaEvaluaciones');
+    if (ctx2 && datos.evaluaciones && datos.evaluaciones.datasets) {
+        configGraficas.evaluaciones = {
+            type: 'line',
+            data: datos.evaluaciones,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 6,
+                        title: { display: true, text: 'Calificación (1-6)' }
+                    }
+                }
+            }
+        };
+        graficasInstancias.evaluaciones = new Chart(ctx2, configGraficas.evaluaciones);
+    }
+}
+
+function ampliarGrafica(tipo, titulo, promedioCuestionarios = 0, promedioEvaluaciones = 0, 
+                       cuestionariosContestados = 0, evaluacionesContestadas = 0) {
+    // Implementación similar a la del admin
+    try {
+        if (tipo === 'cuestionarios' && (!configGraficas.cuestionarios || !cuestionariosContestados)) {
+            alert('No hay datos disponibles');
+            return;
+        }
+        
+        if (tipo === 'evaluaciones' && (!configGraficas.evaluaciones || !evaluacionesContestadas)) {
+            alert('No hay datos disponibles');
+            return;
+        }
+
+        let config, leyendaHTML;
+        
+        switch(tipo) {
+            case 'cuestionarios':
+                config = JSON.parse(JSON.stringify(configGraficas.cuestionarios));
+                config.options.responsive = true;
+                config.options.maintainAspectRatio = false;
+                
+                leyendaHTML = `
+                    <small class="text-muted">
+                        <span class="badge bg-danger">0-50%</span>
+                        <span class="badge bg-warning">51-70%</span>
+                        <span class="badge bg-info">71-85%</span>
+                        <span class="badge bg-success">86-100%</span>
+                    </small>
+                    <p class="mt-2"><strong>Promedio: ${promedioCuestionarios.toFixed(1)}%</strong></p>
+                `;
+                break;
+                
+            case 'evaluaciones':
+                config = JSON.parse(JSON.stringify(configGraficas.evaluaciones));
+                config.options.responsive = true;
+                config.options.maintainAspectRatio = false;
+                
+                leyendaHTML = `
+                    <p><strong>Escala de evaluación: 1-6 puntos</strong></p>
+                    <p><strong>Promedio: ${promedioEvaluaciones.toFixed(1)}/6</strong></p>
+                `;
+                break;
+        }
+
+        document.getElementById('tituloGraficaAmpliada').textContent = titulo;
+        document.getElementById('leyendaGraficaAmpliada').innerHTML = leyendaHTML;
+
+        const canvas = document.getElementById('graficaAmpliadaCanvas');
+        canvas.width = 800;
+        canvas.height = 600;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (graficasInstancias.ampliada) {
+            graficasInstancias.ampliada.destroy();
+        }
+
+        graficasInstancias.ampliada = new Chart(ctx, config);
+
+        const modal = new bootstrap.Modal(document.getElementById('modalGraficaAmpliada'));
+        modal.show();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al mostrar gráfica: ' + error.message);
+    }
+}
+
+function descargarGrafica() {
+    try {
+        const canvas = document.getElementById('graficaAmpliadaCanvas');
+        const link = document.createElement('a');
+        link.download = `grafica_${new Date().toISOString().slice(0,10)}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al descargar');
+    }
+}
+
+function mostrarGraficasSinDatos() {
+    const ctx1 = document.getElementById('graficaCuestionarios');
+    const ctx2 = document.getElementById('graficaEvaluaciones');
+    
+    if (ctx1) dibujarMensajeSinDatos(ctx1, 'Cuestionarios');
+    if (ctx2) dibujarMensajeSinDatos(ctx2, 'Evaluaciones');
+}
+
+function dibujarMensajeSinDatos(canvas, tipo) {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#6c757d';
+    ctx.font = '16px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('SIN DATOS', canvas.width/2, canvas.height/2);
+    ctx.font = '12px Arial';
+    ctx.fillText(`No hay ${tipo.toLowerCase()} registrados`, canvas.width/2, canvas.height/2 + 25);
+}
+
+function verDetalleAlumno(email) {
+    alert('Funcionalidad de detalle de alumno para instructor - Email: ' + email);
+}
+
+function cerrarEvento() {
+    if (confirm('¿Está seguro de cerrar este evento? No se podrán agregar más alumnos.')) {
+        fetch(`/instructor/evento/{{ evento._id }}/cerrar`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Evento cerrado exitosamente');
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al cerrar evento');
+        });
+    }
+}
+</script>
+{% endblock %}

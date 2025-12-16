@@ -9,60 +9,100 @@
             <h2>Dashboard Instructor</h2>
             <p class="lead">Bienvenido/a {{ instructor_nombre }}</p>
             
-            <!-- Botón para asignar instructores a evento -->
+            
+            <!-- Botón para ver agenda de eventos -->
             <div class="mb-4">
-                <a href="{{ url_for('asignar_instructor_evento') }}" class="btn btn-primary">
-                    <i class="fas fa-link"></i> Asignar Instructores a Evento
+                <a href="{{ url_for('instructor.instructor_agenda') }}" class="btn btn-primary">
+                    <i class="fas fa-calendar-alt"></i> Ver la agenda de eventos de capacitación
                 </a>
             </div>
         </div>
     </div>
 
-    <!-- Eventos Asignados -->
+    <!-- Eventos Asignados (solo abiertos) -->
     <div class="row mt-4">
         <div class="col-md-12">
             <div class="card">
                 <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">Mis Eventos Asignados</h5>
+                    <h5 class="mb-0">Mis Eventos Asignados (Abiertos)</h5>
                 </div>
                 <div class="card-body">
-                    {% if eventos %}
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Curso</th>
-                                    <th>Fecha</th>
-                                    <th>Estatus</th>
-                                    <th>Alumnos Asignados</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for evento in eventos %}
-                                <tr>
-                                    <td>{{ evento.curso_nombre }}</td>
-                                    <td>{{ evento.fecha_evento.strftime('%d/%m/%Y') }}</td>
-                                    <td>
-                                        <span class="badge bg-{{ 'success' if evento.estatus == 'abierto' else 'secondary' }}">
-                                            {{ evento.estatus|upper }}
-                                        </span>
-                                    </td>
-                                    <td>{{ evento.alumnos_asignados|length }}</td>
-                                    <td>
-                                        <button class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-users"></i> Ver Alumnos
-                                        </button>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                    {% if eventos and eventos|length > 0 %}
+                        <!-- Crear lista de eventos abiertos manualmente -->
+                        {% set eventos_abiertos = [] %}
+                        {% for evento in eventos %}
+                            {% if evento.estatus == 'abierto' %}
+                                {% set _ = eventos_abiertos.append(evento) %}
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if eventos_abiertos|length > 0 %}
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Curso</th>
+                                            <th>Fecha</th>
+                                            <th>Estatus</th>
+                                            <th>Alumnos</th>
+                                            <th>Cuestionarios</th>
+                                            <th>Evaluaciones</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for evento in eventos_abiertos %}
+                                        <tr>
+                                            <td>{{ evento.curso_nombre }}</td>
+                                            <td>
+                                                {% if evento.fecha_evento %}
+                                                    {{ evento.fecha_evento.strftime('%d/%m/%Y') }}
+                                                {% else %}
+                                                    Fecha no definida
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-success">
+                                                    {{ evento.estatus|upper }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info">{{ evento.alumnos_asignados|length }}</span>
+                                            </td>
+                                            <td>
+                                                {% set cuestionarios_completados = evento.cuestionarios_contestados if evento.cuestionarios_contestados is defined else 0 %}
+                                                <span class="badge {{ 'bg-success' if cuestionarios_completados > 0 else 'bg-secondary' }}">
+                                                    {{ cuestionarios_completados }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% set evaluaciones_completadas = evento.evaluaciones_contestadas if evento.evaluaciones_contestadas is defined else 0 %}
+                                                <span class="badge {{ 'bg-warning' if evaluaciones_completadas > 0 else 'bg-secondary' }}">
+                                                    {{ evaluaciones_completadas }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <a href="{{ url_for('instructor.instructor_alumnos_evento', evento_id=evento._id) }}" 
+                                                       class="btn btn-outline-primary">
+                                                        <i class="fas fa-users"></i> Ver Alumnos
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info text-center">
+                                <i class="fas fa-info-circle"></i> No tienes eventos abiertos asignados actualmente.
+                            </div>
+                        {% endif %}
                     {% else %}
-                    <div class="alert alert-info text-center">
-                        <i class="fas fa-info-circle"></i> No tienes eventos asignados actualmente.
-                    </div>
+                        <div class="alert alert-info text-center">
+                            <i class="fas fa-info-circle"></i> No tienes eventos asignados actualmente.
+                        </div>
                     {% endif %}
                 </div>
             </div>

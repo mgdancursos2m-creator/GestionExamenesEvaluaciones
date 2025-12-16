@@ -1,0 +1,462 @@
+{% extends "base.html" %}
+
+{% block title %}Agenda de Eventos - Sistema de Exámenes{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Encabezado con información del usuario -->
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calendar-alt"></i> Agenda de Eventos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Filtros -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-body py-3">
+                                    <h6 class="mb-3">Filtrar Eventos</h6>
+                                    <form method="GET" class="row g-3 align-items-center">
+                                        <div class="col-auto">
+                                            <label for="month" class="form-label">Mes</label>
+                                            <select name="month" id="month" class="form-select" onchange="this.form.submit()">
+                                                {% for num, nombre in meses %}
+                                                <option value="{{ num }}" {% if num == mes_actual %}selected{% endif %}>{{ nombre }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-auto">
+                                            <label for="year" class="form-label">Año</label>
+                                            <select name="year" id="year" class="form-select" onchange="this.form.submit()">
+                                                {% for año in años %}
+                                                <option value="{{ año }}" {% if año == año_actual %}selected{% endif %}>{{ año }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-auto">
+                                            <button type="submit" class="btn btn-outline-primary mt-4">
+                                                <i class="fas fa-filter"></i> Filtrar
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lista de Eventos -->
+                    {% if eventos %}
+                    <div class="row">
+                        {% for evento in eventos %}
+                        <div class="col-md-12 mb-4">
+                            <div class="card">
+                                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">
+                                        {% if evento.estatus == 'cerrado' %}
+                                        <i class="fas fa-lock text-secondary"></i> 
+                                        {% else %}
+                                        <i class="fas fa-calendar-check text-success"></i> 
+                                        {% endif %}
+                                        <strong>{{ evento.curso_nombre|default('Evento sin nombre') }}</strong>
+                                    </h6>
+                                    <span class="badge bg-{{ 'success' if evento.estatus == 'abierto' else 'secondary' }}">
+                                        {{ evento.estatus|upper }}
+                                    </span>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Información básica del evento -->
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <p class="mb-1"><strong>Fecha:</strong> 
+                                                {% if evento.fecha_evento %}
+                                                    {{ evento.fecha_evento.strftime('%d/%m/%Y') }}
+                                                {% else %}
+                                                    No especificada
+                                                {% endif %}
+                                            </p>
+                                            <p class="mb-1"><strong>Instructor:</strong> 
+                                                {{ evento.instructor_nombre|default('No asignado') }}
+                                            </p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p class="mb-1"><strong>Alumnos asignados:</strong> 
+                                                <span class="badge bg-info">{{ evento.total_alumnos|default(0) }}</span>
+                                            </p>
+                                            <p class="mb-1"><strong>Cuestionarios:</strong>
+                                                <span class="badge bg-success">{{ evento.cuestionarios_contestados|default(0) }}/{{ evento.total_alumnos|default(0) }}</span>
+                                                {% if evento.promedio_cuestionarios and evento.promedio_cuestionarios > 0 %}
+                                                <span class="badge bg-info ms-1">Promedio: {{ evento.promedio_cuestionarios|round(1) }}%</span>
+                                                {% endif %}
+                                            </p>
+                                            <p class="mb-1"><strong>Evaluaciones:</strong>
+                                                <span class="badge bg-warning">{{ evento.evaluaciones_contestadas|default(0) }}/{{ evento.total_alumnos|default(0) }}</span>
+                                                {% if evento.promedio_evaluaciones and evento.promedio_evaluaciones > 0 %}
+                                                <span class="badge bg-info ms-1">Promedio: {{ evento.promedio_evaluaciones|round(1) }}/6</span>
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Botones de acción -->
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="btn-group" role="group">
+                                                {% if not evento.instructor_id or evento.instructor_id == 'None' or evento.instructor_id == '' %}
+                                                <button class="btn btn-outline-primary btn-sm asignar-instructor" 
+                                                    data-evento-id="{{ evento._id }}" 
+                                                    data-evento-nombre="{{ evento.curso_nombre|default('Evento sin nombre') }}">
+                                                    <i class="fas fa-user-plus"></i> Asignar Instructor
+                                                </button>
+                                                {% else %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check"></i> Instructor: {{ evento.instructor_nombre }}
+                                                </span>
+                                                {% endif %}
+                                                <a href="{{ url_for('eventos.alumnos_evento', evento_id=evento._id) }}" 
+                                                   class="btn btn-outline-primary btn-sm">
+                                                    <i class="fas fa-users"></i> Alumnos
+                                                </a>
+                                                {% if evento.estatus == 'abierto' %}
+                                                <button class="btn btn-outline-success btn-sm agregar-alumno-agenda"
+                                                        data-evento-id="{{ evento._id }}"
+                                                        data-evento-nombre="{{ evento.nombre|default(evento.curso_nombre) }}"
+                                                        data-curso-nombre="{{ evento.curso_nombre }}">
+                                                    <i class="fas fa-user-plus"></i> Agregar Alumno
+                                                </button>
+                                                <button class="btn btn-outline-secondary btn-sm editar-evento"
+                                                        data-evento-id="{{ evento._id }}">
+                                                    <i class="fas fa-edit"></i> Editar
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Progreso (opcional, se puede ocultar) -->
+                                    <div class="row mt-2">
+                                        <div class="col-md-12">
+                                            <div class="progress mb-1" style="height: 6px;">
+                                                <div class="progress-bar bg-success" 
+                                                     style="width: {{ (evento.cuestionarios_contestados / evento.total_alumnos * 100) if evento.total_alumnos and evento.total_alumnos > 0 else 0 }}%"
+                                                     title="Cuestionarios completados: {{ evento.cuestionarios_contestados|default(0) }}/{{ evento.total_alumnos|default(0) }}">
+                                                </div>
+                                            </div>
+                                            <div class="progress" style="height: 6px;">
+                                                <div class="progress-bar bg-warning" 
+                                                     style="width: {{ (evento.evaluaciones_contestadas / evento.total_alumnos * 100) if evento.total_alumnos and evento.total_alumnos > 0 else 0 }}%"
+                                                     title="Evaluaciones completadas: {{ evento.evaluaciones_contestadas|default(0) }}/{{ evento.total_alumnos|default(0) }}">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-info-circle"></i> No hay eventos programados para {{ meses[mes_actual-1][1] }} {{ año_actual }}.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Asignar Instructor -->
+<div class="modal fade" id="modalAsignarInstructor" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Asignar Instructor al Evento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Evento: <strong id="nombreEventoAsignar"></strong></p>
+                <div class="mb-3">
+                    <label for="instructorSelect" class="form-label">Seleccionar Instructor</label>
+                    <select class="form-select" id="instructorSelect" required>
+                        <option value="">Seleccione un instructor</option>
+                        {% for instructor in instructores %}
+                            <option value="{{ instructor._id }}|{{ instructor.email }}|{{ instructor.nombre }}">
+                                {{ instructor.nombre }} ({{ instructor.email }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <input type="hidden" id="eventoIdAsignar">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnConfirmarAsignar">Asignar Instructor</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para agregar alumno desde agenda -->
+<div class="modal fade" id="modalAgregarAlumnoAgenda" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Agregar Alumno al Evento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formAgregarAlumnoAgenda">
+                <div class="modal-body">
+                    <input type="hidden" id="evento_id_agenda" name="evento_id">
+                    <div id="infoEventoAgenda" class="alert alert-info mb-3">
+                        <!-- Se llenará con JavaScript -->
+                    </div>
+                    <div class="mb-3">
+                        <label for="nombre_alumno_agenda" class="form-label">Nombre completo</label>
+                        <input type="text" class="form-control" id="nombre_alumno_agenda" name="nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email_alumno_agenda" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email_alumno_agenda" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="telefono_alumno_agenda" class="form-label">Teléfono</label>
+                        <input type="text" class="form-control" id="telefono_alumno_agenda" name="telefono">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success" id="btnGuardarAlumnoAgenda">
+                        <i class="fas fa-save"></i> Guardar Alumno
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para editar evento -->
+<div class="modal fade" id="modalEditarEvento" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Editar Evento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formEditarEvento">
+                <div class="modal-body">
+                    <input type="hidden" id="evento_id_editar" name="evento_id">
+                    <div class="mb-3">
+                        <label for="estatus_evento" class="form-label">Estatus del Evento</label>
+                        <select class="form-select" id="estatus_evento" name="estatus" required>
+                            <option value="abierto">Abierto</option>
+                            <option value="cerrado">Cerrado</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btnGuardarEvento">
+                        <i class="fas fa-save"></i> Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    margin-bottom: 1rem;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+
+.progress {
+    background-color: #e9ecef;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+
+
+<script>
+// Script para manejar la asignación de instructores
+document.addEventListener('DOMContentLoaded', function() {
+    const modalAsignarInstructor = new bootstrap.Modal(document.getElementById('modalAsignarInstructor'));
+    let eventoIdAsignar = null;
+
+    // Abrir modal para asignar instructor
+    document.querySelectorAll('.asignar-instructor').forEach(button => {
+        button.addEventListener('click', function() {
+            eventoIdAsignar = this.getAttribute('data-evento-id');
+            const eventoNombre = this.getAttribute('data-evento-nombre');
+            document.getElementById('nombreEventoAsignar').textContent = eventoNombre;
+            document.getElementById('eventoIdAsignar').value = eventoIdAsignar;
+            
+            // Limpiar selección anterior
+            document.getElementById('instructorSelect').value = '';
+            
+            modalAsignarInstructor.show();
+        });
+    });
+
+    // Confirmar asignación de instructor
+    document.getElementById('btnConfirmarAsignar').addEventListener('click', function() {
+        const instructorSelect = document.getElementById('instructorSelect');
+        const instructorValue = instructorSelect.value;
+        
+        if (!instructorValue) {
+            alert('Por favor seleccione un instructor');
+            return;
+        }
+
+        // Separar los valores: id|email|nombre
+        const [instructorId, instructorEmail, instructorNombre] = instructorValue.split('|');
+
+        // Enviar datos al servidor en formato JSON
+        fetch('/admin/asignar_instructor_evento', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                evento_id: eventoIdAsignar,
+                instructor_email: instructorEmail,
+                instructor_id: instructorId,
+                instructor_nombre: instructorNombre
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error en la respuesta del servidor');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                modalAsignarInstructor.hide();
+                location.reload(); // Recargar para ver los cambios
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al asignar instructor: ' + error.message);
+        });
+    });
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modalAgregarAlumnoAgenda = new bootstrap.Modal(document.getElementById('modalAgregarAlumnoAgenda'));
+    const modalEditarEvento = new bootstrap.Modal(document.getElementById('modalEditarEvento'));
+    const formAgregarAlumnoAgenda = document.getElementById('formAgregarAlumnoAgenda');
+    const formEditarEvento = document.getElementById('formEditarEvento');
+    
+    // Abrir modal para agregar alumno desde agenda
+    document.querySelectorAll('.agregar-alumno-agenda').forEach(button => {
+        button.addEventListener('click', function() {
+            const eventoId = this.getAttribute('data-evento-id');
+            const eventoNombre = this.getAttribute('data-evento-nombre');
+            const cursoNombre = this.getAttribute('data-curso-nombre');
+            
+            document.getElementById('evento_id_agenda').value = eventoId;
+            document.getElementById('infoEventoAgenda').innerHTML = 
+                `<strong>Evento:</strong> ${eventoNombre}<br><strong>Curso:</strong> ${cursoNombre}`;
+            
+            modalAgregarAlumnoAgenda.show();
+        });
+    });
+    
+    // Abrir modal para editar evento
+    document.querySelectorAll('.editar-evento').forEach(button => {
+        button.addEventListener('click', function() {
+            const eventoId = this.getAttribute('data-evento-id');
+            document.getElementById('evento_id_editar').value = eventoId;
+            modalEditarEvento.show();
+        });
+    });
+    
+    // Enviar formulario de alumno desde agenda
+    formAgregarAlumnoAgenda.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const eventoId = document.getElementById('evento_id_agenda').value;
+        const btnGuardar = document.getElementById('btnGuardarAlumnoAgenda');
+        
+        btnGuardar.disabled = true;
+        btnGuardar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+        
+        fetch(`/admin/evento/${eventoId}/agregar_alumno`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                modalAgregarAlumnoAgenda.hide();
+                formAgregarAlumnoAgenda.reset();
+                // Recargar la página para actualizar las métricas
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al agregar alumno');
+        })
+        .finally(() => {
+            btnGuardar.disabled = false;
+            btnGuardar.innerHTML = '<i class="fas fa-save"></i> Guardar Alumno';
+        });
+    });
+    
+    // Enviar formulario de edición de evento
+    formEditarEvento.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const eventoId = document.getElementById('evento_id_editar').value;
+        const btnGuardar = document.getElementById('btnGuardarEvento');
+        
+        btnGuardar.disabled = true;
+        btnGuardar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+        
+        fetch(`/admin/evento/${eventoId}/editar`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                modalEditarEvento.hide();
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al editar evento');
+        })
+        .finally(() => {
+            btnGuardar.disabled = false;
+            btnGuardar.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios';
+        });
+    });
+});
+</script>
+{% endblock %}

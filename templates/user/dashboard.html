@@ -1,133 +1,201 @@
 {% extends "base.html" %}
 
-{% block title %}Mi Dashboard{% endblock %}
+{% block title %}Dashboard Alumno{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row">
-        <div class="col-md-12">
-            <h2>Mi Dashboard</h2>
-            <p class="lead">Bienvenido/a, {{ session.nombre }}</p>
-        </div>
+<div class="row">
+    <div class="col-md-12">
+        <h2>Mi Dashboard</h2>
+        <p class="lead">Bienvenido/a, {{ session.nombre }}</p>
     </div>
+</div>
 
-    {% if session.role == 'alumno' %}
-    <!-- Dashboard para Alumnos -->
-    <div class="row mt-4">
-        <div class="col-md-6">
-            <div class="card text-white bg-primary">
-                <div class="card-body">
-                    <h5 class="card-title">Mis Exámenes</h5>
-                    <p class="card-text">Accede a tus exámenes de aprendizaje</p>
-                    <a href="{{ url_for('user_examenes') }}" class="btn btn-light">Ver Exámenes</a>
-                </div>
+<!-- Mis Eventos de Capacitación -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-calendar-alt"></i> Mis Eventos de Capacitación</h5>
             </div>
-        </div>
-
-        <div class="col-md-6">
-            <div class="card text-white bg-success">
-                <div class="card-body">
-                    <h5 class="card-title">Mis Evaluaciones</h5>
-                    <p class="card-text">Consulta tus evaluaciones de cursos</p>
-                    <a href="#actividades" class="btn btn-light">Ver Abajo</a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Lista de actividades recientes -->
-    {% if actividades %}
-    <div class="row mt-4" id="actividades">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Actividades Recientes</h5>
-                </div>
-                <div class="card-body">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Actividad</th>
-                                <th>Curso</th>
-                                <th>Tipo</th>
-                                <th>Fecha</th>
-                                <th>Resultado</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for actividad in actividades %}
-                            <tr>
-                                <td>{{ actividad.examen_nombre }}</td>
-                                <td>{{ actividad.curso_nombre }}</td>
-                                <td>
-                                    {% if actividad.tipo_evaluacion == 'cuestionario' %}
-                                        <span class="badge bg-primary">Examen</span>
-                                    {% else %}
-                                        <span class="badge bg-warning">Evaluación Curso</span>
-                                    {% endif %}
-                                </td>
-                                <td>{{ actividad.fecha_realizacion.strftime("%d/%m/%Y %H:%M") if actividad.fecha_realizacion else 'N/A' }}</td>
-                                <td>
-                                    {% if actividad.tipo_evaluacion == 'cuestionario' %}
-                                        {% if actividad.calificacion is defined and actividad.calificacion is not none %}
-                                            <span class="badge bg-success">{{ "%.2f"|format(actividad.calificacion) }}%</span>
+            <div class="card-body">
+                {% if eventos %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Curso</th>
+                                    <th>Fecha del Evento</th>
+                                    <th>Cuestionario</th>
+                                    <th>Evaluación</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for evento in eventos %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ evento.curso_nombre }}</strong>
+                                    </td>
+                                    <td>
+                                        {% if evento.fecha_evento %}
+                                            {{ evento.fecha_evento.strftime('%d/%m/%Y') }}
                                         {% else %}
-                                            <span class="badge bg-secondary">N/A</span>
+                                            Fecha no definida
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if evento.tiene_cuestionario %}
+                                            {% if evento.cuestionario_completado %}
+                                                <span class="badge bg-success">Completado</span>
+                                            {% else %}
+                                                <a href="{{ url_for('alumno.tomar_examen', evento_id=evento.evento_id, curso_id=evento.curso_id) }}" 
+                                                   class="btn btn-primary btn-sm">
+                                                   <i class="fas fa-question-circle"></i> Cuestionario
+                                                </a>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="badge bg-secondary">No disponible</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if evento.tiene_evaluacion %}
+                                            {% if evento.evaluacion_completada %}
+                                                <span class="badge bg-success">Completada</span>
+                                            {% else %}
+                                                <a href="{{ url_for('alumno.tomar_evaluacion', evento_id=evento.evento_id, curso_id=evento.curso_id) }}" 
+                                                   class="btn btn-secondary btn-sm">
+                                                   <i class="fas fa-clipboard-check"></i> Evaluación
+                                                </a>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="badge bg-secondary">No disponible</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            {% if evento.tiene_cuestionario and not evento.cuestionario_completado %}
+                                                <a href="{{ url_for('alumno.tomar_examen', 
+                                                                   evento_id=evento.evento_id, 
+                                                                   curso_id=evento.curso_id) }}" 
+                                                   class="btn btn-primary" 
+                                                   title="Contestar Cuestionario">
+                                                   <i class="fas fa-question-circle"></i> Cuestionario
+                                                </a>
+                                            {% endif %}
+        
+                                            {% if evento.tiene_evaluacion and not evento.evaluacion_completada %}
+                                                <!-- CORREGIDO: usar tomar_evaluacion en lugar de tomar_evaluacion_taller -->
+                                                <a href="{{ url_for('alumno.tomar_evaluacion', 
+                                                                   evento_id=evento.evento_id, 
+                                                                   curso_id=evento.curso_id) }}" 
+                                                   class="btn btn-warning" 
+                                                   title="Contestar Evaluación">
+                                                    <i class="fas fa-clipboard-check"></i> Evaluación
+                                                </a>
+                                            {% endif %}
+        
+                                            {% if evento.cuestionario_completado and evento.evaluacion_completada %}
+                                                <span class="badge bg-success">Todo Completado</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-info-circle"></i> 
+                        No tienes eventos de capacitación asignados actualmente.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Accesos Rápidos -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-question-circle"></i> Mis Exámenes</h5>
+                <p class="card-text">Accede a tus exámenes de aprendizaje</p>
+                <a href="{{ url_for('alumno.user_examenes') }}" class="btn btn-light">
+                    <i class="fas fa-eye"></i> Ver Exámenes
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-clipboard-check"></i> Mis Evaluaciones</h5>
+                <p class="card-text">Consulta tus evaluaciones de cursos</p>
+                <a href="{{ url_for('alumno.user_evaluaciones') }}" class="btn btn-light">
+                    <i class="fas fa-eye"></i> Ver Evaluaciones
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Actividades Recientes -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="fas fa-history"></i> Actividades Recientes</h5>
+            </div>
+            <div class="card-body">
+                {% if actividades %}
+                    <div class="list-group">
+                        {% for actividad in actividades %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">
+                                        {% if actividad.tipo_evaluacion == 'cuestionario' %}
+                                            <i class="fas fa-question-circle text-primary"></i> 
+                                            Cuestionario - {{ actividad.curso_nombre }}
+                                        {% else %}
+                                            <i class="fas fa-clipboard-check text-warning"></i> 
+                                            Evaluación - {{ actividad.curso_nombre }}
+                                        {% endif %}
+                                    </h6>
+                                    <small>{{ actividad.fecha_realizacion.strftime('%d/%m/%Y %H:%M') }}</small>
+                                </div>
+                                <p class="mb-1">
+                                    {% if actividad.tipo_evaluacion == 'cuestionario' %}
+                                        <span class="badge bg-primary">
+                                            <i class="fas fa-question-circle"></i> Cuestionario
+                                        </span>
+                                        {% if actividad.calificacion %}
+                                            Calificación: <strong>{{ actividad.calificacion }}%</strong>
                                         {% endif %}
                                     {% else %}
-                                        {% if actividad.promedio_general is defined and actividad.promedio_general is not none %}
-                                            <span class="badge bg-info">{{ "%.2f"|format(actividad.promedio_general) }}/6</span>
-                                        {% else %}
-                                            <span class="badge bg-secondary">N/A</span>
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-clipboard-check"></i> Evaluación
+                                        </span>
+                                        {% if actividad.promedio_general %}
+                                            Promedio: <strong>{{ "%.2f"|format(actividad.promedio_general) }}/6</strong>
                                         {% endif %}
                                     {% endif %}
-                                </td>
-                                <td>
-                                    {% if actividad.tipo_evaluacion == 'cuestionario' %}
-                                        <a href="{{ url_for('ver_cuestionario_completado', cuestionario_id=actividad._id) }}"
-                                           class="btn btn-info btn-sm">
-                                            Ver Detalles
-                                        </a>
-                                    {% else %}
-                                        <a href="{{ url_for('ver_evaluacion_completada', evaluacion_id=actividad._id) }}"
-                                           class="btn btn-info btn-sm">
-                                            Ver Detalles
-                                        </a>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                                </p>
+                                <small class="text-muted">
+                                    Completado el {{ actividad.fecha_realizacion.strftime('%d/%m/%Y a las %H:%M') }}
+                                </small>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-info-circle"></i> 
+                        No hay actividades completadas. Una vez que completes exámenes o evaluaciones de curso, aparecerán aquí.
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
-    {% else %}
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <div class="alert alert-info">
-                <h5>No hay actividades completadas</h5>
-                <p>Una vez que completes exámenes o evaluaciones de curso, aparecerán aquí.</p>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    {% else %}
-    <!-- Dashboard para Instructores -->
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Panel de Instructor</h5>
-                    <p class="card-text">Bienvenido al sistema de evaluaciones como instructor.</p>
-                    <p>Desde aquí puedes gestionar tus cursos y revisar evaluaciones de estudiantes.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
 </div>
 {% endblock %}

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle de Cuestionario - Sistema de Exámenes{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Detalle de Cuestionario Completado</h2>
+        <a href="javascript:history.back()" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Información General</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p><strong>Alumno:</strong> {{ alumno.nombre if alumno else cuestionario.alumno_nombre }}</p>
+                            <p><strong>Email:</strong> {{ cuestionario.alumno_email }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><strong>Examen:</strong> {{ cuestionario.examen_nombre }}</p>
+                            <p><strong>Curso:</strong> {{ cuestionario.curso_nombre }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><strong>Calificación:</strong> 
+                                <span class="badge bg-{{ 'success' if cuestionario.calificación >= 70 else 'warning' }}">
+                                    {{ cuestionario.calificación }}%
+                                </span>
+                            </p>
+                            <p><strong>Fecha:</strong> {{ cuestionario.fecha_realizacion.strftime('%d/%m/%Y %H:%M') }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Resultados del Cuestionario</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Pregunta</th>
+                                    <th>Respuesta del Alumno</th>
+                                    <th>Respuesta Correcta</th>
+                                    <th>Resultado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for resultado in cuestionario.resultados %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    <td>{{ resultado.pregunta }}</td>
+                                    <td>{{ resultado.respuesta_usuario|default('No respondida') }}</td>
+                                    <td>{{ resultado.respuesta_correcta }}</td>
+                                    <td>
+                                        {% if resultado.es_correcta %}
+                                        <span class="badge bg-success">Correcta</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Incorrecta</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h4>{{ cuestionario.respuestas_correctas }}/{{ cuestionario.total_preguntas }}</h4>
+                                    <p class="mb-0">Respuestas Correctas</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h4>{{ cuestionario.calificación }}%</h4>
+                                    <p class="mb-0">Calificación Final</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,1103 @@
+{% extends "base.html" %}
+
+{% block title %}Alumnos del Evento - Administrador{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="h3 mb-4 text-gray-800">Alumnos del Evento: {{ evento.curso_nombre }}</h1>
+        </div>
+    </div>
+
+    <!-- Información del Evento -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Información del Evento</h5>
+                    <p><strong>Curso:</strong> {{ evento.curso_nombre }}</p>
+                    <p><strong>Fecha:</strong> {{ evento.fecha_evento.strftime('%d/%m/%Y') if evento.fecha_evento else 'No especificada' }}</p>
+                    <p><strong>Instructor:</strong> {{ evento.instructor_nombre or 'No asignado' }}</p>
+                    <p><strong>Total de alumnos:</strong> {{ evento.alumnos_asignados|length }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Estadísticas</h5>
+                    <p><strong>Cuestionarios contestados:</strong> {{ evento.cuestionarios_contestados or 0 }}/{{ evento.alumnos_asignados|length }}</p>
+                    <p><strong>Evaluaciones registradas:</strong> {{ evento.evaluaciones_contestadas or 0 }}/{{ evento.alumnos_asignados|length }}</p>
+                    <!-- ✅ AÑADIDO: Porcentajes de participación -->
+                    {% set total_alumnos = evento.alumnos_asignados|length %}
+                    {% set porcentaje_cuestionarios = ((evento.cuestionarios_contestados or 0) / total_alumnos * 100) if total_alumnos > 0 else 0 %}
+                    {% set porcentaje_evaluaciones = ((evento.evaluaciones_contestadas or 0) / total_alumnos * 100) if total_alumnos > 0 else 0 %}
+                    <div class="mt-3">
+                        <small class="text-muted">Participación en Cuestionarios:</small>
+                        <div class="progress mb-2" style="height: 8px;">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {{ porcentaje_cuestionarios }}%"
+                                 aria-valuenow="{{ porcentaje_cuestionarios }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
+                            </div>
+                        </div>
+                        <small class="text-muted">Participación en Evaluaciones:</small>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-warning" role="progressbar" 
+                                 style="width: {{ porcentaje_evaluaciones }}%"
+                                 aria-valuenow="{{ porcentaje_evaluaciones }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficas de Calificaciones - VERSIÓN CORREGIDA -->
+    <div class="row mb-4">
+        <!-- Gráfica 1: Calificaciones de Cuestionarios (Donut) -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="m-0 font-weight-bold">Calificaciones de Cuestionarios</h6>
+                </div>
+                <div class="card-body">
+                    {% if evento.cuestionarios_contestados > 0 %}
+                        <div class="grafica-container" style="cursor: pointer;" onclick="ampliarGrafica('cuestionarios', 'Calificaciones de Cuestionarios')">
+                            <canvas id="graficaCuestionarios"></canvas>
+                        </div>
+                        <div class="mt-3 text-center">
+                            <p><strong>Promedio: {{ "%.1f"|format(evento.promedio_cuestionarios) }}%</strong></p>
+                            <small class="text-muted">
+                                <span class="badge bg-danger">0-50%</span>
+                                <span class="badge bg-warning">51-70%</span>
+                                <span class="badge bg-info">71-85%</span>
+                                <span class="badge bg-success">86-100%</span>
+                            </small>
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary mt-2" 
+                                onclick="ampliarGrafica('cuestionarios', 
+                                                        'Calificaciones de Cuestionarios', 
+                                                        {{ evento.promedio_cuestionarios|default(0) }}, 
+                                                        {{ evento.promedio_evaluaciones|default(0) }},
+                                                        {{ evento.cuestionarios_contestados|default(0) }},
+                                                        {{ evento.evaluaciones_contestadas|default(0) }})">
+                            <i class="fas fa-expand"></i> Ampliar Gráfica
+                        </button>
+                    {% else %}
+                        <div class="alert alert-info text-center py-4">
+                            <i class="fas fa-chart-bar fa-2x mb-2"></i>
+                            <p>No hay cuestionarios registrados</p>
+                        </div>
+
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gráfica 2: Promedios de Evaluaciones (Línea) -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h6 class="m-0 font-weight-bold">Promedios de Evaluaciones</h6>
+                </div>
+                <div class="card-body">
+                    {% if evento.evaluaciones_contestadas > 0 %}
+                        <div class="grafica-container" style="cursor: pointer;" onclick="ampliarGrafica('evaluaciones', 'Promedios de Evaluaciones')">
+                            <canvas id="graficaEvaluaciones" width="400" height="200"></canvas>
+                        </div>
+                        <div class="mt-3 text-center">
+                            <p><strong>Promedio: {{ "%.1f"|format(evento.promedio_evaluaciones) }}/6</strong></p>
+                            <small class="text-muted">Escala de evaluación: 1-6 puntos</small>
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    Evaluaciones registradas: {{ evento.evaluaciones_contestadas }}/{{ evento.total_alumnos }}
+                                </small>
+                            </div>
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary mt-2" 
+                                onclick="ampliarGrafica('evaluaciones', 
+                                                        'Promedios de Evaluaciones', 
+                                                        {{ evento.promedio_cuestionarios|default(0) }}, 
+                                                        {{ evento.promedio_evaluaciones|default(0) }},
+                                                        {{ evento.cuestionarios_contestados|default(0) }},
+                                                        {{ evento.evaluaciones_contestadas|default(0) }})">
+                                <i class="fas fa-expand"></i> Ampliar Gráfica
+                        </button>
+                    {% else %}
+                        <div class="alert alert-info text-center py-4">
+                            <i class="fas fa-star fa-2x mb-3"></i>
+                            <h5>SIN DATOS</h5>
+                           <p>No hay evaluaciones registradas</p>
+                            <small class="text-muted">
+                                Evaluaciones contestadas: {{ evento.evaluaciones_contestadas }}/{{ evento.total_alumnos }}
+                            </small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- ✅ NUEVA GRÁFICA: Calificación por Alumno (Barras) -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <h6 class="m-0 font-weight-bold">Calificación por Alumno</h6>
+                </div>
+                <div class="card-body">
+                    {% if alumnos %}
+                        <div class="grafica-container" style="cursor: pointer;" onclick="ampliarGrafica('alumnos', 'Calificación por Alumno')">
+                            <canvas id="graficaAlumnos" width="400" height="200"></canvas>
+                        </div>
+                        <div class="mt-3 text-center">
+                            <small class="text-muted">
+                                <span class="badge bg-danger">0-50%</span>
+                                <span class="badge bg-warning">51-70%</span>
+                                <span class="badge bg-info">71-80%</span>
+                                <span class="badge bg-success">81-100%</span>
+                            </small>
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    Alumnos con cuestionario: {{ evento.cuestionarios_contestados }}/{{ evento.total_alumnos }}
+                                </small>
+                            </div>
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary mt-2" 
+                                onclick="ampliarGrafica('alumnos', 
+                                                        'Calificación por Alumno', 
+                                                        {{ evento.promedio_cuestionarios|default(0) }}, 
+                                                        {{ evento.promedio_evaluaciones|default(0) }},
+                                                        {{ evento.cuestionarios_contestados|default(0) }},
+                                                        {{ evento.evaluaciones_contestadas|default(0) }})">
+                            <i class="fas fa-expand"></i> Ampliar Gráfica
+                        </button>
+                    {% else %}
+                        <div class="alert alert-info text-center py-4">
+                            <i class="fas fa-users fa-2x mb-3"></i>
+                            <h5>SIN DATOS</h5>
+                            <p>No hay alumnos inscritos</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Alumnos -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Lista de Alumnos Inscritos</h6>
+                    <div>
+                        <button class="btn btn-primary btn-sm" onclick="agregarAlumno()">
+                            <i class="fas fa-plus"></i> Agregar Alumno
+                        </button>
+                        <!-- ✅ AÑADIDO: Botón para recargar datos -->
+                        <button class="btn btn-outline-secondary btn-sm ms-2" onclick="location.reload()">
+                            <i class="fas fa-sync-alt"></i> Actualizar
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if alumnos %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Email</th>
+                                    <th>Teléfono</th>
+                                    <th>Fecha de Inscripción</th>
+                                    <th>Calificación Cuestionario</th>
+                                    <th>Promedio Evaluación</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for alumno in alumnos %}
+                                <tr>
+                                    <td>{{ alumno.nombre }}</td>
+                                    <td>{{ alumno.email }}</td>
+                                    <td>{{ alumno.telefono or 'No especificado' }}</td>
+                                    <td>{{ alumno.fecha_inscripcion.strftime('%d/%m/%Y %H:%M') if alumno.fecha_inscripcion else 'No registrada' }}</td>
+                                    <td>
+                                        {% if alumno.tiene_cuestionario and alumno.cuestionario %}
+                                            <span class="badge bg-{{ 'success' if alumno.cuestionario.calificacion >= 8 else 'warning' if alumno.cuestionario.calificacion >= 6 else 'danger' }}">
+                                                {{ alumno.cuestionario.calificacion }}%
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">No contestado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if alumno.tiene_evaluacion and alumno.evaluacion %}
+                                            <span class="badge bg-{{ 'success' if alumno.evaluacion.puntuacion_promedio >= 4.5 else 'warning' if alumno.evaluacion.puntuacion_promedio >= 3 else 'danger' }}">
+                                                {{ "%.1f"|format(alumno.evaluacion.puntuacion_promedio) }}/6
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">No evaluado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button class="btn btn-warning" onclick="editarAlumno('{{ alumno.email }}')" title="Editar alumno">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-danger" onclick="eliminarAlumno('{{ evento._id }}', '{{ alumno.email }}')" title="Eliminar del evento">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                            {% if alumno.tiene_cuestionario or alumno.tiene_evaluacion %}
+                                            <button class="btn btn-info" onclick="verDetallesAlumno('{{ alumno.email }}')" title="Ver estadísticas">
+                                                <i class="fas fa-chart-bar"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No hay alumnos inscritos en este evento.</p>
+                        <button class="btn btn-primary" onclick="agregarAlumno()">
+                            <i class="fas fa-plus"></i> Agregar Primer Alumno
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between">
+                <!-- BOTÓN MODIFICADO PARA VOLVER ATRÁS -->
+                <button type="button" class="btn btn-secondary" onclick="volverAtras()">
+                    <i class="fas fa-arrow-left"></i> Volver Atrás
+                </button>
+            
+                <button class="btn btn-info" onclick="generarReporte()">
+                    <i class="fas fa-download"></i> Generar Reporte
+                </button>
+            
+                {% if evento.estatus == 'abierto' %}
+                    <button class="btn btn-success" onclick="cerrarEvento()">
+                        <i class="fas fa-lock"></i> Cerrar Evento
+                    </button>
+                {% else %}
+                    <button class="btn btn-warning" onclick="reabrirEvento()">
+                        <i class="fas fa-lock-open"></i> Reabrir Evento
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Los modales se mantienen igual -->
+<!-- Modal para agregar alumno -->
+<div class="modal fade" id="modalAgregarAlumno" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Agregar Alumno al Evento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formAgregarAlumno">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Correo Electrónico *</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary mb-3" onclick="buscarAlumno()">
+                        <i class="fas fa-search"></i> Buscar Alumno
+                    </button>
+                    
+                    <div id="camposAdicionales" style="display: none;">
+                        <div class="mb-3">
+                            <label for="nombre" class="form-label">Nombre *</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="telefono" class="form-label">Teléfono</label>
+                            <input type="text" class="form-control" id="telefono" name="telefono">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnConfirmarAgregar" onclick="confirmarAgregar()" disabled>Agregar Alumno</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para editar alumno -->
+<div class="modal fade" id="modalEditarAlumno" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title">Editar Alumno</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditarAlumno">
+                    <input type="hidden" id="email_original" name="email_original">
+                    <div class="mb-3">
+                        <label for="nuevo_email" class="form-label">Correo Electrónico *</label>
+                        <input type="email" class="form-control" id="nuevo_email" name="nuevo_email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="nuevo_nombre" class="form-label">Nombre *</label>
+                        <input type="text" class="form-control" id="nuevo_nombre" name="nuevo_nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="nuevo_telefono" class="form-label">Teléfono</label>
+                        <input type="text" class="form-control" id="nuevo_telefono" name="nuevo_telefono">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning" id="btnConfirmarEditar" onclick="confirmarEditar()">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para detalles de alumno -->
+<div class="modal fade" id="modalDetallesAlumno" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">Estadísticas Detalladas del Alumno</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="detallesAlumnoContent">
+                    <!-- Contenido cargado dinámicamente -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ✅ NUEVO MODAL: Para gráficas ampliadas -->
+<div class="modal fade" id="modalGraficaAmpliada" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="tituloGraficaAmpliada">Gráfica Ampliada</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div id="leyendaGraficaAmpliada" class="mb-3"></div>
+                <!-- Asegúrate de que el canvas tenga dimensiones mínimas -->
+                <div style="position: relative; height: 70vh; width: 100%;">
+                    <canvas id="graficaAmpliadaCanvas"></canvas>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="descargarGrafica()">
+                    <i class="fas fa-download"></i> Descargar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cerrar
+                </button>
+                <button type="button" class="btn btn-info" onclick="descargarGrafica()">
+                    <i class="fas fa-download"></i> Descargar Imagen
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
+// ✅ AGREGAR ESTO AL INICIO DEL SCRIPT
+
+// Variables globales para determinar el contexto (admin o instructor)
+var esInstructor = {% if es_instructor|default(false) %}true{% else %}false{% endif %};
+var baseUrl = esInstructor ? '/instructor' : '/admin';
+var eventoId = '{{ evento._id }}';
+
+console.log('=== CONTEXTO DETECTADO ===');
+console.log('esInstructor:', esInstructor);
+console.log('baseUrl:', baseUrl);
+console.log('eventoId:', eventoId);
+
+<script>
+// VERIFICAR SI CHART.JS SE CARGÓ CORRECTAMENTE
+if (typeof Chart === 'undefined') {
+    console.error('❌ Chart.js no se cargó. Verifica la ruta del archivo.');
+    document.addEventListener('DOMContentLoaded', function() {
+        mostrarMensajesErrorGraficas();
+    });
+} else {
+    console.log('✅ Chart.js cargado correctamente, versión:', Chart.version);
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('📄 DOM cargado completamente');
+        inicializarGraficas();
+    });
+}
+
+// ✅ VARIABLES GLOBALES
+let graficasInstancias = {
+    cuestionarios: null,
+    evaluaciones: null,
+    alumnos: null,
+    ampliada: null
+};
+
+let configGraficas = {
+    cuestionarios: null,
+    evaluaciones: null,
+    alumnos: null
+};
+
+// ✅ FUNCIÓN PRINCIPAL DE INICIALIZACIÓN
+function inicializarGraficas() {
+    console.log('🔄 Inicializando gráficas...');
+    
+    if (typeof Chart === 'undefined') {
+        console.error('❌ ERROR: Chart.js no está disponible');
+        mostrarMensajesErrorGraficas();
+        return;
+    }
+    
+    // Forzar dimensiones de los canvas
+    const canvasIds = ['graficaCuestionarios', 'graficaEvaluaciones', 'graficaAlumnos'];
+    canvasIds.forEach(id => {
+        const canvas = document.getElementById(id);
+        if (canvas) {
+            canvas.width = 400;
+            canvas.height = 250;
+            console.log(`✅ Canvas ${id} dimensionado: ${canvas.width}x${canvas.height}`);
+        }
+    });
+    
+    // Cargar datos del servidor
+    obtenerDatosGraficasReales();
+}
+
+// ✅ CARGAR DATOS DEL SERVIDOR
+// ✅ MODIFICADO: Usar baseUrl dinámica
+function obtenerDatosGraficasReales() {
+    console.log('📡 Solicitando datos de gráficas...');
+    
+    // ANTES: const apiUrl = `/evento/${eventoId}/estadisticas-graficas`;
+    // DESPUÉS:
+    const apiUrl = `${baseUrl}/evento/${eventoId}/estadisticas-graficas`;
+    
+    console.log('🔗 URL de API:', apiUrl);
+    
+    fetch(apiUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Error HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('📊 Datos recibidos:', data);
+            console.log('📊 ¿Success?', data.success);
+            console.log('📊 Datos de gráficas:', data.datos);
+            if (data.success && data.datos) {
+                crearGraficasConDatosReales(data.datos);
+            } else {
+                console.warn('No hay datos válidos, usando datos de prueba');
+                usarDatosDePrueba();
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error cargando datos:', error);
+            usarDatosDePrueba();
+        });
+}
+
+// ✅ DATOS DE PRUEBA PARA VERIFICACIÓN
+function usarDatosDePrueba() {
+    console.log('🔄 Usando datos de prueba...');
+    
+    const testData = {
+        cuestionarios: {
+            labels: ['0-50%', '51-70%', '71-85%', '86-100%'],
+            datasets: [{
+                data: [0, 2, 0, 0],
+                backgroundColor: ['#dc3545', '#ffc107', '#0dcaf0', '#198754']
+            }]
+        },
+        evaluaciones: {
+            labels: ['Alumno 1', 'Alumno 2'],
+            datasets: [{
+                label: 'Evaluación',
+                data: [5.5, 5.9],
+                borderColor: '#198754',
+                backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                borderWidth: 2,
+                fill: true
+            }]
+        },
+        alumnos: {
+            labels: ['Alumno 1', 'Alumno 2'],
+            datasets: [{
+                label: 'Calificación',
+                data: [61, 69],
+                backgroundColor: ['#0d6efd', '#6f42c1']
+            }]
+        }
+    };
+    
+    crearGraficasConDatosReales(testData);
+}
+
+// ✅ CREAR TODAS LAS GRÁFICAS CON DATOS
+function crearGraficasConDatosReales(datos) {
+    console.log('🎨 Creando gráficas con datos...');
+    
+    // 1. Gráfica de cuestionarios
+    if (datos.cuestionarios && datos.cuestionarios.datasets) {
+        crearGraficaCuestionarios(datos.cuestionarios);
+    } else {
+        mostrarMensajeSinDatos('graficaCuestionarios', 'cuestionarios');
+    }
+    
+    // 2. Gráfica de evaluaciones
+    if (datos.evaluaciones && datos.evaluaciones.datasets) {
+        crearGraficaEvaluaciones(datos.evaluaciones);
+    } else {
+        mostrarMensajeSinDatos('graficaEvaluaciones', 'evaluaciones');
+    }
+    
+    // 3. Gráfica de alumnos
+    if (datos.alumnos && datos.alumnos.datasets) {
+        crearGraficaAlumnos(datos.alumnos);
+    } else {
+        mostrarMensajeSinDatos('graficaAlumnos', 'alumnos');
+    }
+}
+
+// ✅ CREAR GRÁFICA DE CUESTIONARIOS (DONUT)
+function crearGraficaCuestionarios(datos) {
+    const canvas = document.getElementById('graficaCuestionarios');
+    if (!canvas) return;
+    
+    // Destruir gráfica anterior si existe
+    if (graficasInstancias.cuestionarios) {
+        graficasInstancias.cuestionarios.destroy();
+    }
+    
+    // Guardar configuración para uso posterior
+    configGraficas.cuestionarios = {
+        type: 'doughnut',
+        data: datos,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20
+                    }
+                }
+            }
+        }
+    };
+    
+    // Crear nueva gráfica
+    graficasInstancias.cuestionarios = new Chart(canvas, configGraficas.cuestionarios);
+    console.log('✅ Gráfica de cuestionarios creada');
+}
+
+// ✅ CREAR GRÁFICA DE EVALUACIONES (LÍNEA)
+function crearGraficaEvaluaciones(datos) {
+    const canvas = document.getElementById('graficaEvaluaciones');
+    if (!canvas) return;
+    
+    if (graficasInstancias.evaluaciones) {
+        graficasInstancias.evaluaciones.destroy();
+    }
+    
+    configGraficas.evaluaciones = {
+        type: 'line',
+        data: datos,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 6,
+                    title: {
+                        display: true,
+                        text: 'Calificación (1-6)'
+                    }
+                }
+            }
+        }
+    };
+    
+    graficasInstancias.evaluaciones = new Chart(canvas, configGraficas.evaluaciones);
+    console.log('✅ Gráfica de evaluaciones creada');
+}
+
+// ✅ CREAR GRÁFICA DE ALUMNOS (BARRAS)
+function crearGraficaAlumnos(datos) {
+    const canvas = document.getElementById('graficaAlumnos');
+    if (!canvas) return;
+    
+    if (graficasInstancias.alumnos) {
+        graficasInstancias.alumnos.destroy();
+    }
+    
+    configGraficas.alumnos = {
+        type: 'bar',
+        data: datos,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Calificación (%)'
+                    }
+                }
+            }
+        }
+    };
+    
+    graficasInstancias.alumnos = new Chart(canvas, configGraficas.alumnos);
+    console.log('✅ Gráfica de alumnos creada');
+}
+
+// ✅ MOSTRAR MENSAJE "SIN DATOS"
+function mostrarMensajeSinDatos(canvasId, tipo) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Dibujar fondo
+    ctx.fillStyle = '#f8f9fa';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Dibujar borde
+    ctx.strokeStyle = '#dee2e6';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(0, 0, canvas.width, canvas.height);
+    
+    // Dibujar texto
+    ctx.fillStyle = '#6c757d';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 30px Arial';
+    ctx.fillText('📊', canvas.width / 2, canvas.height / 2 - 20);
+    ctx.font = 'bold 14px Arial';
+    ctx.fillText('SIN DATOS', canvas.width / 2, canvas.height / 2 + 10);
+    ctx.font = '12px Arial';
+    ctx.fillText(`No hay ${tipo} disponibles`, canvas.width / 2, canvas.height / 2 + 30);
+}
+
+// ✅ MOSTRAR MENSAJES DE ERROR
+function mostrarMensajesErrorGraficas() {
+    const contenedores = [
+        document.getElementById('graficaCuestionarios')?.parentElement,
+        document.getElementById('graficaEvaluaciones')?.parentElement,
+        document.getElementById('graficaAlumnos')?.parentElement
+    ];
+    
+    contenedores.forEach(contenedor => {
+        if (contenedor) {
+            contenedor.innerHTML = `
+                <div class="alert alert-danger text-center p-3">
+                    <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                    <h6>Error al cargar gráficas</h6>
+                    <small>Chart.js no se pudo cargar correctamente</small>
+                </div>
+            `;
+        }
+    });
+}
+
+// ✅ FUNCIÓN PARA AMPLIAR GRÁFICA
+function ampliarGrafica(tipo, titulo, promedioCuestionarios = 0, promedioEvaluaciones = 0, 
+                       cuestionariosContestados = 0, evaluacionesContestadas = 0) {
+    try {
+        // Verificar si hay datos
+        if (!configGraficas[tipo]) {
+            alert('No hay datos disponibles para esta gráfica');
+            return;
+        }
+        
+        // Clonar configuración
+        let config = JSON.parse(JSON.stringify(configGraficas[tipo]));
+        let leyendaHTML = '';
+        
+        // Configuración para modal
+        config.options = {
+            ...config.options,
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                ...(config.options.plugins || {}),
+                legend: {
+                    position: 'top',
+                    labels: { font: { size: 14 } }
+                }
+            }
+        };
+        
+        // Leyenda específica
+        if (tipo === 'cuestionarios') {
+            leyendaHTML = `
+                <small class="text-muted">
+                    <span class="badge bg-danger">0-50%</span>
+                    <span class="badge bg-warning">51-70%</span>
+                    <span class="badge bg-info">71-85%</span>
+                    <span class="badge bg-success">86-100%</span>
+                </small>
+                <p class="mt-2"><strong>Promedio: ${promedioCuestionarios.toFixed(1)}%</strong></p>
+            `;
+        } else if (tipo === 'evaluaciones') {
+            leyendaHTML = `
+                <p><strong>Escala de evaluación: 1-6 puntos</strong></p>
+                <p><strong>Promedio: ${promedioEvaluaciones.toFixed(1)}/6</strong></p>
+            `;
+        } else if (tipo === 'alumnos') {
+            leyendaHTML = `
+                <small class="text-muted">
+                    <span class="badge bg-danger">0-50%</span>
+                    <span class="badge bg-warning">51-70%</span>
+                    <span class="badge bg-info">71-80%</span>
+                    <span class="badge bg-success">81-100%</span>
+                </small>
+            `;
+        }
+        
+        // Actualizar modal
+        document.getElementById('tituloGraficaAmpliada').textContent = titulo;
+        document.getElementById('leyendaGraficaAmpliada').innerHTML = leyendaHTML;
+        
+        // Configurar canvas
+        const canvas = document.getElementById('graficaAmpliadaCanvas');
+        canvas.width = 800;
+        canvas.height = 600;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Destruir gráfica anterior
+        if (graficasInstancias.ampliada) {
+            graficasInstancias.ampliada.destroy();
+        }
+        
+        // Crear nueva gráfica
+        graficasInstancias.ampliada = new Chart(ctx, config);
+        
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('modalGraficaAmpliada'));
+        modal.show();
+        
+    } catch (error) {
+        console.error('Error al ampliar gráfica:', error);
+        alert('Error al mostrar la gráfica ampliada');
+    }
+}
+
+// ✅ FUNCIÓN PARA DESCARGAR GRÁFICA
+function descargarGrafica() {
+    try {
+        const canvas = document.getElementById('graficaAmpliadaCanvas');
+        const link = document.createElement('a');
+        link.download = `grafica_${new Date().toISOString().slice(0,10)}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    } catch (error) {
+        console.error('Error al descargar:', error);
+        alert('Error al descargar la gráfica');
+    }
+}
+
+// ✅ FUNCIONES RESTANTES (sin cambios)
+function agregarAlumno() {
+    console.log("Función agregarAlumno ejecutada");
+    document.getElementById('formAgregarAlumno').reset();
+    document.getElementById('camposAdicionales').style.display = 'none';
+    document.getElementById('btnConfirmarAgregar').disabled = true;
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalAgregarAlumno'));
+    modal.show();
+}
+
+function buscarAlumno() {
+    const email = document.getElementById('email').value;
+    if (!email) {
+        alert('Por favor ingrese un correo electrónico');
+        return;
+    }
+    
+    // ANTES: fetch(`/admin/buscar_alumno?email=${encodeURIComponent(email)}`)
+    // DESPUÉS:
+    fetch(`${baseUrl}/buscar_alumno?email=${encodeURIComponent(email)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.exists) {
+                document.getElementById('nombre').value = data.alumno.nombre;
+                document.getElementById('telefono').value = data.alumno.telefono || '';
+                document.getElementById('camposAdicionales').style.display = 'block';
+                document.getElementById('btnConfirmarAgregar').disabled = false;
+            } else {
+                document.getElementById('nombre').value = '';
+                document.getElementById('telefono').value = '';
+                document.getElementById('camposAdicionales').style.display = 'block';
+                document.getElementById('btnConfirmarAgregar').disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al buscar alumno');
+        });
+}
+
+function confirmarAgregar() {
+    const email = document.getElementById('email').value;
+    const nombre = document.getElementById('nombre').value;
+    const telefono = document.getElementById('telefono').value;
+
+    if (!email || !nombre) {
+        alert('El correo electrónico y nombre son requeridos');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('email', email);
+    formData.append('nombre', nombre);
+    formData.append('telefono', telefono);
+
+    // ANTES: fetch(`/admin/evento/{{ evento._id }}/agregar_alumno`, {
+    // DESPUÉS:
+    fetch(`${baseUrl}/evento/${eventoId}/agregar_alumno`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al agregar alumno');
+    });
+}
+
+function editarAlumno(email) {
+    console.log("Editando alumno:", email);
+    
+    const filas = document.querySelectorAll('#dataTable tbody tr');
+    let alumnoData = null;
+    
+    for (let fila of filas) {
+        const emailFila = fila.cells[1].textContent.trim();
+        if (emailFila === email) {
+            alumnoData = {
+                nombre: fila.cells[0].textContent.trim(),
+                email: emailFila,
+                telefono: fila.cells[2].textContent.trim()
+            };
+            break;
+        }
+    }
+    
+    if (!alumnoData) {
+        alert('No se pudieron cargar los datos del alumno');
+        return;
+    }
+    
+    document.getElementById('email_original').value = alumnoData.email;
+    document.getElementById('nuevo_email').value = alumnoData.email;
+    document.getElementById('nuevo_nombre').value = alumnoData.nombre;
+    document.getElementById('nuevo_telefono').value = alumnoData.telefono === 'No especificado' ? '' : alumnoData.telefono;
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalEditarAlumno'));
+    modal.show();
+}
+
+function confirmarEditar() {
+    const email_original = document.getElementById('email_original').value;
+    const nuevo_email = document.getElementById('nuevo_email').value;
+    const nuevo_nombre = document.getElementById('nuevo_nombre').value;
+    const nuevo_telefono = document.getElementById('nuevo_telefono').value;
+
+    if (!nuevo_email || !nuevo_nombre) {
+        alert('El correo electrónico y nombre son requeridos');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('email_original', email_original);
+    formData.append('nuevo_email', nuevo_email);
+    formData.append('nuevo_nombre', nuevo_nombre);
+    formData.append('nuevo_telefono', nuevo_telefono);
+
+    // ANTES: fetch(`/admin/evento/{{ evento._id }}/editar-alumno`, {
+    // DESPUÉS:
+    fetch(`${baseUrl}/evento/${eventoId}/editar-alumno`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al editar alumno');
+    });
+}
+
+function eliminarAlumno(eventoId, email) {
+    if (confirm('¿Está seguro de que desea eliminar este alumno del evento?\n\nEsta acción no elimina al alumno del sistema, solo lo remueve de este evento.')) {
+        // ANTES: fetch(`/admin/evento/${eventoId}/eliminar-alumno/${encodeURIComponent(email)}`, {
+        // DESPUÉS:
+        fetch(`${baseUrl}/evento/${eventoId}/eliminar-alumno/${encodeURIComponent(email)}`, {
+            method: 'GET'
+        })
+        .then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Error al eliminar el alumno');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error de conexión');
+        });
+    }
+}
+
+function cerrarEvento() {
+    if (confirm('¿Está seguro de que desea cerrar este evento? No se podrán agregar más alumnos.')) {
+        // ANTES: fetch(`/eventos/evento/{{ evento._id }}/cerrar`, {
+        // DESPUÉS:
+        fetch(`${baseUrl}/evento/${eventoId}/cerrar`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Evento cerrado exitosamente');
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al cerrar el evento');
+        });
+    }
+}
+
+function reabrirEvento() {
+    if (confirm('¿Está seguro de que desea reabrir este evento? Se podrán agregar más alumnos.')) {
+        // ANTES: fetch(`/eventos/evento/{{ evento._id }}/reabrir`, {
+        // DESPUÉS:
+        fetch(`${baseUrl}/evento/${eventoId}/reabrir`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Evento reabierto exitosamente');
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al reabrir el evento');
+        });
+    }
+}
+
+function volverAtras() {
+    if (document.referrer) {
+        window.history.back();
+    } else {
+        // Redirigir según el contexto
+        if (esInstructor) {
+            // Si es instructor, ir al dashboard de instructor
+            window.location.href = "/instructor/dashboard";
+        } else {
+            // Si es admin, ir a la agenda de admin
+            window.location.href = "/admin/agenda";
+        }
+    }
+}
+</script>
+
+<style>
+/* Estilos para mejorar la visualización de gráficas */
+canvas {
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+}
+
+.grafica-container {
+    position: relative;
+    height: 250px;
+}
+
+@media (max-width: 768px) {
+    .col-md-4 {
+        margin-bottom: 20px;
+    }
+    
+    .grafica-container {
+        height: 200px;
+    }
+}
+</style>
+{% endblock %}
