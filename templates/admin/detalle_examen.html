@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle del Examen - {{ examen.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Botón de volver -->
+    <div class="mb-3">
+        <a href="{{ url_for('gestion_examenes') }}" class="btn btn-secondary">
+            ← Volver a Exámenes
+        </a>
+    </div>
+
+    <!-- Encabezado del examen -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h2>{{ examen.nombre }}</h2>
+            <p class="lead">{{ examen.descripcion }}</p>
+            
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <strong>Tipo:</strong> 
+                    <span class="badge bg-primary">{{ examen.tipo_examen }}</span>
+                </div>
+                <div class="col-md-6">
+                    <strong>Curso:</strong> {{ curso.nombre if curso else 'N/A' }}
+                </div>
+            </div>
+            
+            <div class="row mt-2">
+                <div class="col-md-6">
+                    <strong>Instructor:</strong> {{ curso.instructor_nombre if curso else 'N/A' }}
+                </div>
+                <div class="col-md-6">
+                    <strong>Fecha creación:</strong> 
+                    {{ examen.fecha_creacion.strftime('%d/%m/%Y %H:%M') if examen.fecha_creacion else 'N/A' }}
+                </div>
+            </div>
+            
+            <div class="row mt-2">
+                <div class="col-12">
+                    <strong>Total de preguntas:</strong> 
+                    <span class="badge bg-success">
+                        {% if examen.preguntas %}
+                            {{ examen.preguntas|length }}
+                        {% elif examen.estructura and examen.estructura.secciones %}
+                            {{ examen.estructura.secciones.taller|length + examen.estructura.secciones.instructor|length + 1 }}
+                        {% else %}
+                            0
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenido según el tipo de examen -->
+    {% if examen.tipo_examen == 'evaluacion_taller' and examen.formato_especifico %}
+        <!-- FORMATO ESPECÍFICO PARA EVALUACIÓN DE TALLER -->
+        <div class="card">
+            <div class="card-header bg-warning text-white">
+                <h4 class="mb-0">Evaluación del Taller - Formato Específico</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <strong>Escala de evaluación:</strong> {{ examen.estructura.escala }}
+                </div>
+
+                <!-- Sección Taller -->
+                <h5 class="mt-4 text-primary">Taller</h5>
+                {% for pregunta in examen.estructura.secciones.taller %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <strong>{{ pregunta.numero }}.- {{ pregunta.texto }}</strong>
+                        <div class="mt-2">
+                            {% for i in range(1, 7) %}
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="pregunta_{{ pregunta.numero }}" disabled>
+                                <label class="form-check-label"><strong>({{ i }})</strong></label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- Sección Instructor -->
+                <h5 class="mt-4 text-primary">Instructor</h5>
+                {% for pregunta in examen.estructura.secciones.instructor %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <strong>{{ pregunta.numero }}.- {{ pregunta.texto }}</strong>
+                        <div class="mt-2">
+                            {% for i in range(1, 7) %}
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="pregunta_{{ pregunta.numero }}" disabled>
+                                <label class="form-check-label"><strong>({{ i }})</strong></label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- Comentarios -->
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <strong>{{ examen.estructura.comentarios }}</strong>
+                        <div class="mt-3">
+                            <textarea class="form-control" rows="4" disabled 
+                                      placeholder="Comentarios: ______________________________________________
+__________________________________________________________
+__________________________________________________________"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    {% elif examen.tipo_examen == 'cuestionario' %}
+        <!-- FORMATO PARA CUESTIONARIO -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Preguntas del Cuestionario</h4>
+            </div>
+            <div class="card-body">
+                {% if examen.preguntas %}
+                    {% for pregunta in examen.preguntas %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5>Pregunta {{ loop.index }}</h5>
+                            <p><strong>{{ pregunta.pregunta }}</strong></p>
+                            
+                            {% if pregunta.opciones %}
+                            <div class="options-list mt-3">
+                                <strong>Opciones:</strong>
+                                <div class="list-group mt-2">
+                                    {% for opcion in pregunta.opciones %}
+                                    <div class="list-group-item {% if opcion == pregunta.respuesta_correcta %}list-group-item-success{% endif %}">
+                                        {{ opcion }}
+                                        {% if opcion == pregunta.respuesta_correcta %}
+                                        <span class="badge bg-success float-end">Correcta</span>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-warning">
+                        No hay preguntas definidas para este cuestionario.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+    {% elif examen.tipo_examen == 'encuesta' %}
+        <!-- FORMATO PARA ENCUESTA -->
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">Preguntas de la Encuesta</h4>
+            </div>
+            <div class="card-body">
+                {% if examen.preguntas %}
+                    {% for pregunta in examen.preguntas %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5>Pregunta {{ loop.index }}</h5>
+                            <p><strong>{{ pregunta.pregunta }}</strong></p>
+                            <div class="response-field">
+                                <textarea class="form-control" rows="3" disabled placeholder="Respuesta abierta..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-warning">
+                        No hay preguntas definidas para esta encuesta.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+    {% else %}
+        <!-- FORMATO GENÉRICO PARA OTROS TIPOS -->
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h4 class="mb-0">Preguntas del Examen</h4>
+            </div>
+            <div class="card-body">
+                {% if examen.preguntas %}
+                    {% for pregunta in examen.preguntas %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5>Pregunta {{ loop.index }}</h5>
+                            <p><strong>{{ pregunta.pregunta }}</strong></p>
+                            <p><em>Tipo: {{ pregunta.tipo }}</em></p>
+                            
+                            {% if pregunta.opciones %}
+                            <div class="options-list mt-3">
+                                <strong>Opciones:</strong>
+                                <ul class="list-group mt-2">
+                                    {% for opcion in pregunta.opciones %}
+                                    <li class="list-group-item">{{ opcion }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-warning">
+                        No hay preguntas definidas para este examen.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Botones de acción -->
+    <div class="mt-4 text-center">
+        <a href="{{ url_for('gestion_examenes') }}" class="btn btn-secondary">Volver a Exámenes</a>
+        
+        {% if session.role == 'admin' %}
+        <a href="{{ url_for('eliminar_examen', examen_id=examen._id) }}" 
+           class="btn btn-danger" 
+           onclick="return confirm('¿Estás seguro de que quieres eliminar este examen?')">
+            Eliminar Examen
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .options-list .list-group-item-success {
+        background-color: #d1edff;
+        border-color: #b6d7ff;
+    }
+</style>
+{% endblock %}

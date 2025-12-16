@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Evaluación del Taller - {{ examen.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Evaluación del Taller</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('enviar_evaluacion_taller', examen_id=examen._id) }}">
+                        
+                        <!-- Información General -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="nombre_taller" class="form-label">Nombre del Taller:</label>
+                                    <input type="text" class="form-control" id="nombre_taller" name="nombre_taller" 
+                                           value="{{ nombre_curso }}" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="nombre_instructor" class="form-label">Nombre del Instructor:</label>
+                                    <input type="text" class="form-control" id="nombre_instructor" name="nombre_instructor" 
+                                           value="{{ nombre_instructor }}" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Instrucciones -->
+                        <div class="alert alert-info">
+                            <h5>Instrucciones:</h5>
+                            <p class="mb-2">En base a la siguiente escala evalúe por favor los siguientes puntos:</p>
+                            <p class="mb-0"><strong>(1) Muy mal (2) Mal (3) Regular (4) Bien (5) Muy Bien (6) Excelente</strong></p>
+                        </div>
+
+                        <!-- Sección Taller -->
+                        <div class="mb-4">
+                            <h5 class="border-bottom pb-2">Taller</h5>
+                            {% for pregunta in estructura.secciones.taller %}
+                            <div class="row mb-3 align-items-center">
+                                <div class="col-md-8">
+                                    <label class="form-label">{{ pregunta.numero }}.- {{ pregunta.texto }}</label>
+                                </div>
+                                <div class="col-md-4">
+                                    <select class="form-select" name="pregunta_{{ pregunta.numero }}" required>
+                                        <option value="">Seleccionar</option>
+                                        <option value="1">1 - Muy mal</option>
+                                        <option value="2">2 - Mal</option>
+                                        <option value="3">3 - Regular</option>
+                                        <option value="4">4 - Bien</option>
+                                        <option value="5">5 - Muy Bien</option>
+                                        <option value="6">6 - Excelente</option>
+                                    </select>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Sección Instructor -->
+                        <div class="mb-4">
+                            <h5 class="border-bottom pb-2">Instructor</h5>
+                            {% for pregunta in estructura.secciones.instructor %}
+                            <div class="row mb-3 align-items-center">
+                                <div class="col-md-8">
+                                    <label class="form-label">{{ pregunta.numero }}.- {{ pregunta.texto }}</label>
+                                </div>
+                                <div class="col-md-4">
+                                    <select class="form-select" name="pregunta_{{ pregunta.numero }}" required>
+                                        <option value="">Seleccionar</option>
+                                        <option value="1">1 - Muy mal</option>
+                                        <option value="2">2 - Mal</option>
+                                        <option value="3">3 - Regular</option>
+                                        <option value="4">4 - Bien</option>
+                                        <option value="5">5 - Muy Bien</option>
+                                        <option value="6">6 - Excelente</option>
+                                    </select>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Comentarios -->
+                        <div class="mb-4">
+                            <h5 class="border-bottom pb-2">Comentarios</h5>
+                            <div class="mb-3">
+                                <label for="comentarios" class="form-label">{{ estructura.secciones.comentarios }}</label>
+                                <textarea class="form-control" id="comentarios" name="comentarios" 
+                                          rows="4" placeholder="Escribe tus comentarios aquí..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('user_examenes') }}" class="btn btn-secondary me-md-2">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">Enviar Evaluación</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

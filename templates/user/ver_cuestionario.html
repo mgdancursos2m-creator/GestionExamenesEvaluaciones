@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Detalles del Cuestionario - {{ cuestionario.examen_nombre }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h2>Detalles del Cuestionario: {{ cuestionario.examen_nombre }}</h2>
+            <p class="lead">Curso: {{ cuestionario.curso_nombre }}</p>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Resumen</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Calificación:</strong> <span class="badge bg-success">{{ cuestionario.calificacion }}%</span></p>
+                    <p><strong>Respuestas correctas:</strong> {{ cuestionario.respuestas_correctas }} de {{ cuestionario.total_preguntas }}</p>
+                    <p><strong>Fecha de realización:</strong> {{ cuestionario.fecha_realizacion.strftime("%d/%m/%Y %H:%M") }}</p>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Detalle de respuestas</h5>
+                </div>
+                <div class="card-body">
+                    {% for resultado in cuestionario.resultados %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6 class="card-title">Pregunta {{ loop.index }}</h6>
+                            <p class="card-text">{{ resultado.pregunta }}</p>
+                            <p><strong>Tu respuesta:</strong> {{ resultado.respuesta_usuario }}</p>
+                            <p><strong>Respuesta correcta:</strong> {{ resultado.respuesta_correcta }}</p>
+                            <p>
+                                {% if resultado.es_correcta %}
+                                <span class="badge bg-success">Correcta</span>
+                                {% else %}
+                                <span class="badge bg-danger">Incorrecta</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <a href="{{ url_for('user_dashboard') }}" class="btn btn-primary mt-3">Volver al Dashboard</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

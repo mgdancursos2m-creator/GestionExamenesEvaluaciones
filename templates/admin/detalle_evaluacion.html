@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}Detalles de Evaluación{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <h2>Detalles de Evaluación</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin_dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('gestion_cursos') }}">Cursos</a></li>
+                    <li class="breadcrumb-item active">Evaluación</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Información general -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Información General</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <th>Alumno:</th>
+                            <td>{{ evaluacion.alumno_nombre }} ({{ evaluacion.alumno_email }})</td>
+                        </tr>
+                        <tr>
+                            <th>Curso:</th>
+                            <td>{{ evaluacion.curso_nombre }}</td>
+                        </tr>
+                        <tr>
+                            <th>Examen:</th>
+                            <td>{{ evaluacion.examen_nombre }}</td>
+                        </tr>
+                        <tr>
+                            <th>Tipo:</th>
+                            <td>
+                                <span class="badge 
+                                    {% if evaluacion.tipo_evaluacion == 'cuestionario' %}bg-primary
+                                    {% elif evaluacion.tipo_evaluacion == 'evaluacion_taller' %}bg-success
+                                    {% elif evaluacion.tipo_evaluacion == 'encuesta' %}bg-warning
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ evaluacion.tipo_evaluacion }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Fecha:</th>
+                            <td>{{ evaluacion.fecha_realizacion.strftime('%d/%m/%Y %H:%M') }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Resultados</h5>
+                </div>
+                <div class="card-body">
+                    {% if evaluacion.calificacion is defined %}
+                    <div class="alert alert-success">
+                        <h4>Calificación: {{ evaluacion.calificacion }}%</h4>
+                        <p>Respuestas correctas: {{ evaluacion.respuestas_correctas }} de {{ evaluacion.total_preguntas }}</p>
+                    </div>
+                    {% elif evaluacion.promedio_general is defined %}
+                    <div class="alert alert-info">
+                        <h4>Evaluación de Taller</h4>
+                        <p>Promedio General: <strong>{{ evaluacion.promedio_general }}/6</strong></p>
+                        <p>Promedio Taller: {{ evaluacion.promedio_taller }}/6</p>
+                        <p>Promedio Instructor: {{ evaluacion.promedio_instructor }}/6</p>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <h4>Evaluación Sin Calificación</h4>
+                        <p>Esta evaluación no tiene calificación numérica.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detalles de las respuestas -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Detalles de las Respuestas</h5>
+                </div>
+                <div class="card-body">
+                    {% if evaluacion.tipo_evaluacion == 'cuestionario' %}
+                        <!-- Mostrar resultados de cuestionario -->
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Pregunta</th>
+                                        <th>Respuesta del Alumno</th>
+                                        <th>Respuesta Correcta</th>
+                                        <th>Resultado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for resultado in evaluacion.resultados %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>{{ resultado.pregunta }}</td>
+                                        <td>{{ resultado.respuesta_usuario }}</td>
+                                        <td>{{ resultado.respuesta_correcta }}</td>
+                                        <td>
+                                            {% if resultado.es_correcta %}
+                                                <span class="badge bg-success">Correcta</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Incorrecta</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% elif evaluacion.tipo_evaluacion == 'evaluacion_taller' %}
+                        <!-- Mostrar resultados de evaluación de taller -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Sección Taller</h6>
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Pregunta</th>
+                                            <th>Puntaje</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for key, value in evaluacion.resultados.respuestas_taller.items() %}
+                                        <tr>
+                                            <td>{{ key }}</td>
+                                            <td>{{ value.pregunta }}</td>
+                                            <td>
+                                                <span class="badge 
+                                                    {% if value.puntaje >= 5 %}bg-success
+                                                    {% elif value.puntaje >= 3 %}bg-warning
+                                                    {% else %}bg-danger{% endif %}">
+                                                    {{ value.puntaje }}/6
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                        <tr class="table-primary">
+                                            <td colspan="2"><strong>Promedio Taller</strong></td>
+                                            <td><strong>{{ evaluacion.promedio_taller }}/6</strong></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Sección Instructor</h6>
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Pregunta</th>
+                                            <th>Puntaje</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for key, value in evaluacion.resultados.respuestas_instructor.items() %}
+                                        <tr>
+                                            <td>{{ key }}</td>
+                                            <td>{{ value.pregunta }}</td>
+                                            <td>
+                                                <span class="badge 
+                                                    {% if value.puntaje >= 5 %}bg-success
+                                                    {% elif value.puntaje >= 3 %}bg-warning
+                                                    {% else %}bg-danger{% endif %}">
+                                                    {{ value.puntaje }}/6
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                        <tr class="table-primary">
+                                            <td colspan="2"><strong>Promedio Instructor</strong></td>
+                                            <td><strong>{{ evaluacion.promedio_instructor }}/6</strong></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        {% if evaluacion.resultados.comentarios %}
+                        <div class="row mt-3">
+                            <div class="col-md-12">
+                                <h6>Comentarios del Alumno</h6>
+                                <div class="alert alert-light border">
+                                    <p class="mb-0">{{ evaluacion.resultados.comentarios }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% elif evaluacion.tipo_evaluacion == 'encuesta' %}
+                        <!-- Mostrar resultados de encuesta -->
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            Esta es una encuesta con respuestas abiertas.
+                        </div>
+                        {% if evaluacion.resultados %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Pregunta</th>
+                                        <th>Respuesta del Alumno</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for resultado in evaluacion.resultados %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>{{ resultado.pregunta }}</td>
+                                        <td>{{ resultado.respuesta_usuario or 'Sin respuesta' }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-warning">
+                            No hay detalles de respuestas disponibles para esta encuesta.
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-warning">
+                            No hay detalles adicionales para mostrar para este tipo de evaluación.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-md-12">
+            <a href="{{ url_for('gestion_cursos') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver a Cursos
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

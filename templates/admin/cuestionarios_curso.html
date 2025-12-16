@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Cuestionarios - {{ curso.nombre }}</h2>
+        <a href="{{ url_for('gestion_cursos') }}" class="btn btn-secondary">Volver a Cursos</a>
+    </div>
+
+    {% if cuestionarios %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Nombre del Cuestionario</th>
+                    <th>Evaluaciones Completadas</th>
+                    <th>Promedio</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cuestionario in cuestionarios %}
+                <tr>
+                    <td>{{ cuestionario.nombre }}</td>
+                    <td>{{ cuestionario.evaluaciones_completadas }}</td>
+                    <td>
+                        <span class="badge bg-{% if cuestionario.promedio >= 70 %}success{% elif cuestionario.promedio >= 50 %}warning{% else %}danger{% endif %}">
+                            {{ cuestionario.promedio }}%
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('detalle_examen', examen_id=cuestionario._id) }}" 
+                           class="btn btn-primary btn-sm">Ver Detalle</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        No hay cuestionarios disponibles para este curso.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

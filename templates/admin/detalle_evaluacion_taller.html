@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle Evaluación - Sistema de Exámenes{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Detalle de Evaluación: {{ examen.nombre }}</h2>
+        <a href="{{ url_for('gestion_cursos') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver a Cursos
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">Información General</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Curso:</strong> {{ curso.nombre }}</p>
+                    <p><strong>Total Evaluaciones Realizadas:</strong> {{ evaluaciones|length }}</p>
+                    <p><strong>Fecha Creación:</strong> {{ examen.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="card-title mb-0">Resultados Promedio</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <h6>Promedio General</h6>
+                            <h3 class="text-primary">
+                                {% set avg_general = evaluaciones|selectattr('promedio_general')|map(attribute='promedio_general')|list %}
+                                {{ "%.2f"|format(avg_general|sum / avg_general|length) if avg_general else 0 }}/6
+                            </h3>
+                        </div>
+                        <div class="col-4">
+                            <h6>Promedio Taller</h6>
+                            <h3 class="text-success">
+                                {% set avg_taller = evaluaciones|selectattr('promedio_taller')|map(attribute='promedio_taller')|list %}
+                                {{ "%.2f"|format(avg_taller|sum / avg_taller|length) if avg_taller else 0 }}/6
+                            </h3>
+                        </div>
+                        <div class="col-4">
+                            <h6>Promedio Instructor</h6>
+                            <h3 class="text-info">
+                                {% set avg_instructor = evaluaciones|selectattr('promedio_instructor')|map(attribute='promedio_instructor')|list %}
+                                {{ "%.2f"|format(avg_instructor|sum / avg_instructor|length) if avg_instructor else 0 }}/6
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Evaluaciones Individuales</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Alumno</th>
+                            <th>Fecha</th>
+                            <th>Prom. General</th>
+                            <th>Prom. Taller</th>
+                            <th>Prom. Instructor</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for eval in evaluaciones %}
+                        <tr>
+                            <td>{{ eval.alumno_nombre }}</td>
+                            <td>{{ eval.fecha_realizacion.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td>
+                                <span class="badge bg-{'success' if eval.promedio_general >= 4 else 'warning' if eval.promedio_general >= 3 else 'danger'}">
+                                    {{ eval.promedio_general }}/6
+                                </span>
+                            </td>
+                            <td>{{ eval.promedio_taller }}/6</td>
+                            <td>{{ eval.promedio_instructor }}/6</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-info" 
+                                        onclick="verDetalleEvaluacion('{{ eval._id }}')">
+                                    <i class="fas fa-search"></i> Detalle
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center">No hay evaluaciones realizadas</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para detalle individual -->
+<div class="modal fade" id="modalDetalleEvaluacion" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detalle de Evaluación Individual</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modalDetalleEvaluacionBody">
+                <!-- Contenido dinámico -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function verDetalleEvaluacion(evaluacionId) {
+    fetch(`/admin/evaluacion/${evaluacionId}`)
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('modalDetalleEvaluacionBody').innerHTML = html;
+            new bootstrap.Modal(document.getElementById('modalDetalleEvaluacion')).show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al cargar el detalle de la evaluación');
+        });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle de Evaluación - {{ alumno.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Detalle de Evaluación</h2>
+        <div>
+            <a href="{{ url_for('alumnos_curso', curso_id=curso._id) }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver a Alumnos
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Información General</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Alumno:</strong> {{ alumno.nombre }}</p>
+                    <p><strong>Email:</strong> {{ alumno.email }}</p>
+                    <p><strong>Curso:</strong> {{ curso.nombre }}</p>
+                    <p><strong>Evaluación:</strong> {{ examen.nombre if examen else 'N/A' }}</p>
+                    <p><strong>Tipo:</strong> {{ evaluacion.tipo_evaluacion }}</p>
+                    <p><strong>Fecha:</strong> {{ evaluacion.fecha_realizacion.strftime('%d/%m/%Y %H:%M') }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Resultados</h5>
+                </div>
+                <div class="card-body">
+                    {% if evaluacion.tipo_evaluacion == 'cuestionario' %}
+                    <div class="text-center mb-4">
+                        <h3 class="{% if evaluacion.calificación >= 70 %}text-success{% elif evaluacion.calificación >= 50 %}text-warning{% else %}text-danger{% endif %}">
+                            Calificación: {{ evaluacion.calificación }}%
+                        </h3>
+                        <p class="text-muted">
+                            {{ evaluacion.respuestas_correctas }} de {{ evaluacion.total_preguntas }} preguntas correctas
+                        </p>
+                    </div>
+
+                    <h6>Detalle de Respuestas:</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Pregunta</th>
+                                    <th>Respuesta Usuario</th>
+                                    <th>Respuesta Correcta</th>
+                                    <th>Resultado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for resultado in evaluacion.resultados %}
+                                <tr>
+                                    <td>{{ resultado.pregunta }}</td>
+                                    <td>{{ resultado.respuesta_usuario }}</td>
+                                    <td>{{ resultado.respuesta_correcta }}</td>
+                                    <td>
+                                        {% if resultado.es_correcta %}
+                                        <span class="badge bg-success">Correcta</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Incorrecta</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% elif evaluacion.tipo_evaluacion == 'evaluacion_taller' %}
+                    <div class="text-center mb-4">
+                        <h3 class="{% if evaluacion.promedio_general >= 5 %}text-success{% elif evaluacion.promedio_general >= 4 %}text-warning{% else %}text-danger{% endif %}">
+                            Promedio General: {{ "%.2f"|format(evaluacion.promedio_general) }}/6
+                        </h3>
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <p class="mb-0">Taller: {{ "%.2f"|format(evaluacion.promedio_taller) }}/6</p>
+                            </div>
+                            <div class="col-6">
+                                <p class="mb-0">Instructor: {{ "%.2f"|format(evaluacion.promedio_instructor) }}/6</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if evaluacion.resultados and evaluacion.resultados.comentarios %}
+                    <div class="mb-3">
+                        <h6>Comentarios:</h6>
+                        <div class="border rounded p-3 bg-light">
+                            {{ evaluacion.resultados.comentarios }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

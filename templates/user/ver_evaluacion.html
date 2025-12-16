@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Resultados de Evaluación - {{ evaluacion.examen_nombre }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header bg-info text-white">
+            <h2 class="mb-0">Resultados de Evaluación</h2>
+        </div>
+        <div class="card-body">
+            <!-- Información general -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Información del Taller</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Nombre del Taller:</strong> {{ evaluacion.curso_nombre }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Nombre del Instructor:</strong> {{ evaluacion.instructor_nombre }}
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <strong>Fecha de realización:</strong> {{ evaluacion.fecha_realizacion.strftime('%d/%m/%Y %H:%M') }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Promedio general:</strong> 
+                            <span class="badge bg-success">{{ evaluacion.promedio_general }}/6</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resultados del Taller -->
+            <h4 class="text-primary border-bottom pb-2">Taller</h4>
+            {% if evaluacion.resultados.respuestas_taller %}
+                {% for numero, respuesta in evaluacion.resultados.respuestas_taller.items() %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h6 class="card-title">{{ numero }}.- {{ respuesta.pregunta }}</h6>
+                        <div class="mt-2">
+                            <strong>Calificación:</strong> 
+                            <span class="badge bg-primary">{{ respuesta.puntaje }}/6</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-warning">No hay respuestas para la sección de taller.</div>
+            {% endif %}
+
+            <!-- Resultados del Instructor -->
+            <h4 class="text-primary border-bottom pb-2 mt-4">Instructor</h4>
+            {% if evaluacion.resultados.respuestas_instructor %}
+                {% for numero, respuesta in evaluacion.resultados.respuestas_instructor.items() %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h6 class="card-title">{{ numero }}.- {{ respuesta.pregunta }}</h6>
+                        <div class="mt-2">
+                            <strong>Calificación:</strong> 
+                            <span class="badge bg-primary">{{ respuesta.puntaje }}/6</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-warning">No hay respuestas para la sección de instructor.</div>
+            {% endif %}
+
+            <!-- Comentarios -->
+            {% if evaluacion.resultados.comentarios %}
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h6 class="card-title">Comentarios Adicionales</h6>
+                    <p class="card-text">{{ evaluacion.resultados.comentarios }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="mt-4 text-center">
+                <a href="{{ url_for('user_dashboard') }}" class="btn btn-secondary">Volver al Dashboard</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Mi Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h2>Mi Dashboard</h2>
+            <p class="lead">Bienvenido/a, {{ session.nombre }}</p>
+        </div>
+    </div>
+
+    {% if session.role == 'alumno' %}
+    <!-- Dashboard para Alumnos -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">Mis Exámenes</h5>
+                    <p class="card-text">Accede a tus exámenes de aprendizaje</p>
+                    <a href="{{ url_for('user_examenes') }}" class="btn btn-light">Ver Exámenes</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">Mis Evaluaciones</h5>
+                    <p class="card-text">Consulta tus evaluaciones de cursos</p>
+                    <a href="#actividades" class="btn btn-light">Ver Abajo</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de actividades recientes -->
+    {% if actividades %}
+    <div class="row mt-4" id="actividades">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Actividades Recientes</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Actividad</th>
+                                <th>Curso</th>
+                                <th>Tipo</th>
+                                <th>Fecha</th>
+                                <th>Resultado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for actividad in actividades %}
+                            <tr>
+                                <td>{{ actividad.examen_nombre }}</td>
+                                <td>{{ actividad.curso_nombre }}</td>
+                                <td>
+                                    {% if actividad.tipo_evaluacion == 'cuestionario' %}
+                                        <span class="badge bg-primary">Examen</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Evaluación Curso</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ actividad.fecha_realizacion.strftime("%d/%m/%Y %H:%M") if actividad.fecha_realizacion else 'N/A' }}</td>
+                                <td>
+                                    {% if actividad.tipo_evaluacion == 'cuestionario' %}
+                                        {% if actividad.calificacion is defined and actividad.calificacion is not none %}
+                                            <span class="badge bg-success">{{ "%.2f"|format(actividad.calificacion) }}%</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">N/A</span>
+                                        {% endif %}
+                                    {% else %}
+                                        {% if actividad.promedio_general is defined and actividad.promedio_general is not none %}
+                                            <span class="badge bg-info">{{ "%.2f"|format(actividad.promedio_general) }}/6</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">N/A</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if actividad.tipo_evaluacion == 'cuestionario' %}
+                                        <a href="{{ url_for('ver_cuestionario_completado', cuestionario_id=actividad._id) }}"
+                                           class="btn btn-info btn-sm">
+                                            Ver Detalles
+                                        </a>
+                                    {% else %}
+                                        <a href="{{ url_for('ver_evaluacion_completada', evaluacion_id=actividad._id) }}"
+                                           class="btn btn-info btn-sm">
+                                            Ver Detalles
+                                        </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="alert alert-info">
+                <h5>No hay actividades completadas</h5>
+                <p>Una vez que completes exámenes o evaluaciones de curso, aparecerán aquí.</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- Dashboard para Instructores -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Panel de Instructor</h5>
+                    <p class="card-text">Bienvenido al sistema de evaluaciones como instructor.</p>
+                    <p>Desde aquí puedes gestionar tus cursos y revisar evaluaciones de estudiantes.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

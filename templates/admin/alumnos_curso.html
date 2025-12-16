@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Alumnos - {{ curso.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Alumnos - {{ curso.nombre }}</h2>
+        <div>
+            <a href="{{ url_for('gestion_cursos') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver a Cursos
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Lista de Alumnos Participantes</h5>
+        </div>
+        <div class="card-body">
+            {% if alumnos %}
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Promedio Cuestionarios</th>
+                            <th>Promedio Evaluaciones</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for alumno in alumnos %}
+                        <tr>
+                            <td>{{ alumno.nombre }}</td>
+                            <td>{{ alumno.email }}</td>
+                            <td>
+                                {% if alumno.tiene_cuestionarios %}
+                                <span class="badge bg-{% if alumno.promedio_cuestionarios >= 70 %}success{% elif alumno.promedio_cuestionarios >= 50 %}warning{% else %}danger{% endif %}">
+                                    {{ alumno.promedio_cuestionarios }}%
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary">Sin datos</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if alumno.tiene_evaluaciones %}
+                                <span class="badge bg-{% if alumno.promedio_evaluaciones >= 4 %}success{% elif alumno.promedio_evaluaciones >= 3 %}warning{% else %}danger{% endif %}">
+                                    {{ "%.2f"|format(alumno.promedio_evaluaciones) }}/6
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary">Sin datos</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    {% if alumno.tiene_cuestionarios %}
+                                    <a href="{{ url_for('detalle_evaluacion_alumno', alumno_email=alumno.email, evaluacion_id=alumno.evaluaciones_cuestionarios[0]._id) if alumno.evaluaciones_cuestionarios else '#' }}" 
+                                       class="btn btn-outline-primary" 
+                                       {% if not alumno.evaluaciones_cuestionarios %}disabled{% endif %}>
+                                        <i class="fas fa-file-alt"></i> Ver Cuestionario
+                                    </a>
+                                    {% endif %}
+                                    
+                                    {% if alumno.tiene_evaluaciones %}
+                                    <a href="{{ url_for('detalle_evaluacion_alumno', alumno_email=alumno.email, evaluacion_id=alumno.evaluaciones_taller[0]._id) if alumno.evaluaciones_taller else '#' }}" 
+                                       class="btn btn-outline-info"
+                                       {% if not alumno.evaluaciones_taller %}disabled{% endif %}>
+                                        <i class="fas fa-chart-bar"></i> Ver Evaluación
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info text-center">
+                <i class="fas fa-info-circle"></i> No hay alumnos inscritos en este curso.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,11 @@
+numero,pregunta,tipo_respuesta,opciones,respuesta_correcta
+1,Son componentes del Lenguaje de consulta estructurado,opcion_multiple,"a) DML, DDL, DCL|b) HTML,XML|c) 4gl, Lenguaje C, Java",a
+2,La instrucción para realizar consulta en SQL es:,opcion_multiple,"a) UPDATE|b) SELECT|c) READ",b
+3,Los caracteres comodines cuando realiza una consulta con el SQL ANSI es,opcion_multiple,"a) $, _, ¿|b) *. ?, \,[ ]|c) %, _, \",c
+4,Una relación de una tabla con ella misma se puede realizar por,opcion_multiple,"a) La llave primaria|b) Las llaves foráneas|c) cualquier columna",b
+5,Una subconsulta se puede incluir en una declaración update en la cláusula:,opcion_multiple,"a) set|b) where|c) en ambas",c
+6,La sintaxis correcta de una declaración insert es:,opcion_multiple,"a) insert clientes values (""MX"",""Mexico"")|b) insert into clientes values (""MX"",""Mexico"")|c) insert clientes (""MX"",""Mexico"")",b
+7,Una instrucción SQL de carga de datos en archivos planos es,opcion_multiple,"a) ontape|b) onbar|c) load",c
+8,Si vas a descargar datos de una tabla de Informix a archivos planos que aseveración es falsa,opcion_multiple,"a) Se pueden seleccionar los renglones a descargar con la cláusula where|b) Se pueden seleccionar las columnas a descargar sustituyendo los nombres de ellas en la selección|c) Se pueden indicar diferentes delimitadores de inicio y de fin de los campos",c
+9,La operación UNION funciona,opcion_multiple,"a) como la operación JOIN|b) para unir los resultados de dos consultas con el mismo numero de columnas y tipos de datos correspondientes|c) para agrupar y acumular los resultados de una consulta",b
+10,Si una instrucción delete no tiene cláusula where esta eliminara,opcion_multiple,"a) los primeros renglones|b) todos los renglones de la tabla|c) ningún renglón ya que no contiene condición",b

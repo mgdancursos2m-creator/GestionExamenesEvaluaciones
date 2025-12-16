@@ -1,0 +1,52 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Dashboard Administrador{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>Dashboard Administrador</h2>
+        <p class="lead">Bienvenido al sistema de gestión de exámenes</p>
+    </div>
+</div>
+
+<!-- Aquí puedes agregar estadísticas o accesos rápidos -->
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title">Exámenes</h5>
+                <p class="card-text">Gestionar todos los exámenes</p>
+                <a href="{{ url_for('gestion_examenes') }}" class="btn btn-light">Ir a Exámenes</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title">Alumnos</h5>
+                <p class="card-text">Gestionar alumnos</p>
+                <a href="{{ url_for('gestion_alumnos') }}" class="btn btn-light">Ir a Alumnos</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h5 class="card-title">Instructores</h5>
+                <p class="card-text">Gestionar instructores</p>
+                <a href="{{ url_for('gestion_instructores') }}" class="btn btn-light">Ir a Instructores</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <h5 class="card-title">Cursos</h5>
+                <p class="card-text">Gestionar cursos</p>
+                <a href="{{ url_for('gestion_cursos') }}" class="btn btn-light">Ir a Cursos</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

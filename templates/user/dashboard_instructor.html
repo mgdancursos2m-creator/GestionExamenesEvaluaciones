@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Instructor - Sistema de Exámenes{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <h2>Dashboard Instructor</h2>
+            <p class="lead">Bienvenido/a {{ instructor_nombre }}</p>
+            
+            <!-- Botón para asignar instructores a evento -->
+            <div class="mb-4">
+                <a href="{{ url_for('asignar_instructor_evento') }}" class="btn btn-primary">
+                    <i class="fas fa-link"></i> Asignar Instructores a Evento
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Eventos Asignados -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Mis Eventos Asignados</h5>
+                </div>
+                <div class="card-body">
+                    {% if eventos %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Curso</th>
+                                    <th>Fecha</th>
+                                    <th>Estatus</th>
+                                    <th>Alumnos Asignados</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for evento in eventos %}
+                                <tr>
+                                    <td>{{ evento.curso_nombre }}</td>
+                                    <td>{{ evento.fecha_evento.strftime('%d/%m/%Y') }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if evento.estatus == 'abierto' else 'secondary' }}">
+                                            {{ evento.estatus|upper }}
+                                        </span>
+                                    </td>
+                                    <td>{{ evento.alumnos_asignados|length }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-users"></i> Ver Alumnos
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-info-circle"></i> No tienes eventos asignados actualmente.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

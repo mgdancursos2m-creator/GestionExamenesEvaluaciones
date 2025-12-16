@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Instructores - Sistema de Exámenes{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <h2>Gestión de Instructores</h2>
+            
+            <!-- Botón para asignar instructor a evento -->
+            <div class="mb-4">
+                <a href="{{ url_for('asignar_instructor_evento') }}" class="btn btn-primary">
+                    <i class="fas fa-link"></i> Asignar Instructor a Evento
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Instructores -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Lista de Instructores</h5>
+                </div>
+                <div class="card-body">
+                    {% if instructores %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Email</th>
+                                    <th>Especialidad</th>
+                                    <th>Eventos Asignados</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for instructor in instructores %}
+                                <tr>
+                                    <td>{{ instructor.nombre }}</td>
+                                    <td>{{ instructor.email }}</td>
+                                    <td>{{ instructor.especialidad }}</td>
+                                    <td>
+                                        {% if instructor.eventos_asignados %}
+                                            <div class="eventos-list">
+                                            {% for evento in instructor.eventos_asignados %}
+                                                <div class="evento-item mb-2 p-2 border rounded">
+                                                    <strong>Evento:</strong> {{ evento.nombre }}<br>
+                                                    <strong>Curso:</strong> {{ evento.curso_nombre }}<br>
+                                                    <strong>Estado:</strong> 
+                                                    <span class="badge bg-{{ 'success' if evento.estatus == 'abierto' else 'secondary' }}">
+                                                        {{ evento.estatus|upper }}
+                                                    </span>
+                                                    {% if evento.fecha %}
+                                                    <br><strong>Fecha:</strong> {{ evento.fecha }}
+                                                    {% endif %}
+                                                </div>
+                                            {% endfor %}
+                                            </div>
+                                        {% else %}
+                                            <span class="text-muted">No tiene eventos asignados</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-info-circle"></i> No hay instructores registrados en el sistema.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.eventos-list .evento-item {
+    background-color: #f8f9fa;
+}
+.eventos-list .evento-item:last-child {
+    margin-bottom: 0 !important;
+}
+</style>
+{% endblock %}

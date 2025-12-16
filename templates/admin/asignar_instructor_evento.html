@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Asignar Instructor a Evento - Sistema de Exámenes{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Asignar Instructor a Evento</h2>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver al Dashboard
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Formulario de Asignación</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="formAsignacion">
+                        <!-- Selección de Instructor -->
+                        <div class="mb-3">
+                            <label for="instructor_email" class="form-label">Seleccionar Instructor</label>
+                            <select class="form-select" id="instructor_email" name="instructor_email" required>
+                                <option value="">Seleccionar instructor...</option>
+                                {% for instructor in instructores %}
+                                <option value="{{ instructor.email }}">{{ instructor.nombre }} ({{ instructor.email }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Selección de Curso -->
+                        <div class="mb-3">
+                            <label for="curso_id" class="form-label">Seleccionar Curso</label>
+                            <select class="form-select" id="curso_id" name="curso_id" required>
+                                <option value="">Seleccionar curso...</option>
+                                {% for curso in cursos %}
+                                <option value="{{ curso._id }}">{{ curso.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Selección de Evento -->
+                        <div class="mb-3">
+                            <label for="evento_id" class="form-label">Seleccionar Evento</label>
+                            <select class="form-select" id="evento_id" name="evento_id" required disabled>
+                                <option value="">Primero seleccione un curso</option>
+                            </select>
+                            <div class="form-text" id="eventoHelp">
+                                Solo se muestran eventos con estatus "ABIERTO"
+                            </div>
+                        </div>
+
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-success" id="btnAsignar" disabled>
+                                <i class="fas fa-user-plus"></i> Asignar Instructor al Evento
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Información</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Proceso de Asignación:</h6>
+                    <ol class="small">
+                        <li>Seleccione un instructor</li>
+                        <li>Seleccione un curso activo</li>
+                        <li>Seleccione un evento ABIERTO del curso</li>
+                        <li>Confirme la asignación</li>
+                    </ol>
+                    
+                    <div class="alert alert-warning mt-3">
+                        <small>
+                            <i class="fas fa-info-circle"></i> 
+                            <strong>Nota:</strong> Los instructores se asignan a eventos específicos, no a cursos completos.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cursoSelect = document.getElementById('curso_id');
+    const eventoSelect = document.getElementById('evento_id');
+    const btnAsignar = document.getElementById('btnAsignar');
+    
+    // Pre-cargar eventos en variable JavaScript
+    const eventosData = {
+        {% for curso in cursos %}
+        '{{ curso._id }}': [
+            {% for evento in eventos_por_curso[curso._id|string] %}
+            {
+                id: '{{ evento._id }}',
+                fecha: '{{ evento.fecha_evento.strftime("%d/%m/%Y") }}',
+                instructor: '{{ evento.instructor_nombre or "Sin asignar" }}'
+            },
+            {% endfor %}
+        ],
+        {% endfor %}
+    };
+    
+    // Cuando cambia el curso, cargar eventos
+    cursoSelect.addEventListener('change', function() {
+        const cursoId = this.value;
+        eventoSelect.innerHTML = '<option value="">Seleccionar evento...</option>';
+        eventoSelect.disabled = !cursoId;
+        btnAsignar.disabled = true;
+        
+        if (cursoId && eventosData[cursoId]) {
+            eventosData[cursoId].forEach(evento => {
+                const option = document.createElement('option');
+                option.value = evento.id;
+                option.textContent = `${evento.fecha} - ${evento.instructor}`;
+                eventoSelect.appendChild(option);
+            });
+        }
+    });
+    
+    // Habilitar botón cuando todos los campos estén llenos
+    function verificarFormulario() {
+        const instructor = document.getElementById('instructor_email').value;
+        const curso = cursoSelect.value;
+        const evento = eventoSelect.value;
+        btnAsignar.disabled = !(instructor && curso && evento);
+    }
+    
+    document.getElementById('instructor_email').addEventListener('change', verificarFormulario);
+    cursoSelect.addEventListener('change', verificarFormulario);
+    eventoSelect.addEventListener('change', verificarFormulario);
+});
+</script>
+{% endblock %}

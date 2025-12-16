@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Exámenes{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Gestión de Exámenes</h2>
+    <div>
+        <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAgregarExamen">
+            + Agregar Nuevo Examen
+        </a>
+    </div>
+</div>
+
+<!-- Tabla de exámenes -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Lista de Exámenes</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Tipo</th>
+                        <th>Curso</th>
+                        <th>Instructor</th>
+                        <th>Preguntas</th>
+                        <th>Fecha</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for examen in examenes %}
+                    <tr>
+                        <td>{{ examen.nombre }}</td>
+                        <td>
+                            <span class="badge 
+                                {% if examen.tipo_examen == 'cuestionario' %}bg-primary
+                                {% elif examen.tipo_examen == 'encuesta' %}bg-success
+                                {% elif examen.tipo_examen == 'evaluacion_taller' %}bg-warning
+                                {% else %}bg-secondary{% endif %}">
+                                {{ examen.tipo_examen }}
+                            </span>
+                        </td>
+                        <td>{{ examen.curso_nombre }}</td>
+                        <td>{{ examen.instructor_nombre }}</td>
+                        <td>
+                            <span class="badge bg-info">{{ examen.preguntas_count }}</span>
+                        </td>
+                        <td>
+                            {% if examen.fecha_creacion %}
+                                {{ examen.fecha_creacion.strftime('%d/%m/%Y') }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                        <td>
+                            <!-- BOTÓN VER -->
+                            <a href="{{ url_for('detalle_examen', examen_id=examen.id) }}" 
+                               class="btn btn-info btn-sm">
+                                Ver
+                            </a>
+                            
+                            <!-- Botón eliminar -->
+                            <a href="{{ url_for('eliminar_examen', examen_id=examen.id) }}" 
+                               class="btn btn-danger btn-sm"
+                               onclick="return confirm('¿Estás seguro de eliminar este examen?')">
+                                Eliminar
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted">
+                            No hay exámenes registrados
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para agregar examen (si existe) -->
+{% endblock %}
